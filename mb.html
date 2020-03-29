@@ -1,0 +1,119 @@
+<!DOCTYPE HTML>
+<html>
+
+<body>
+
+  <p>mandelbrot</p>
+
+  <p>Here is my canvas</p>
+
+
+
+<!-- start with big picture
+ x -2 to 1  300 points
+ y 1 to -1  200 points
+-->
+
+<!--
+  Next steps
+  - get into github
+  - colour (fixed)
+  - colour (user defined)
+  - vary size of canvas according to view of picture
+  - let user enter the coordinates
+  - gridlines?
+  - mouse selection of area
+-->
+
+<form id="userinput">
+  <p>xmin <input type="text" id="xmin" value="-2"/> xmax <input type="text" id="xmax" value="1"/></p>
+  <p>ymin <input type="text" id="ymin" value="-1"/> ymax <input type="text" id="ymax" value="1"/></p>
+  <p>iterations <input type="text" id="iterations" value="1000"/></p>
+  <p>dpr <script>window.alert(window.devicePixelRatio)</script></p>
+  <input type="button" id="go" value="GO!" onclick="paint()"/>
+</form>
+
+<canvas id="myCanvas" width="800" height="800" style="border:1px solid #000000;"></canvas>
+
+<script>
+  let highColour= "#000000";
+  let lowColour = "#ff0000";
+
+  function handleHighColourChange(event) {
+    highColour = event.target.value;
+  }
+
+  function handleLowColourChange(event) {
+    lowColour = event.target.value;
+  }
+</script>
+
+<div id="html5DIV">
+  <h3>Closest to black</h3>
+  <input type="color" id="highColour" onchange="handleHighColourChange" value="#ffffff" style="width:85%;">
+  <h3>furthest away</h3>
+  <input type="color" id="lowColour"  onchange="handleLowColourChange" value="#0000ff" style="width:85%;">
+</div>
+
+
+<script src="mb.js"></script>
+
+<script>
+  function paint() {
+
+    const canvas = document.getElementById('myCanvas');
+    const ctx = canvas.getContext('2d');
+    const myImageData = ctx.createImageData(canvas.width, canvas.height);
+
+    // determine the pixels to draw
+    let xmin = Number(document.getElementById('xmin').value);
+    let xmax = Number(document.getElementById('xmax').value);
+    let ymin = Number(document.getElementById('ymin').value);
+    let ymax = Number(document.getElementById('ymax').value);
+    let iterations = Number(document.getElementById('iterations').value);
+    let pointArray = initPoints(xmin,xmax,ymin,ymax,canvas.width, canvas.height);
+    // calculate the max iteration for each point, and the range
+    let iterationRange=calculate(pointArray,iterations,mbCalc);
+
+    // create a colour range
+    let lowCol = document.getElementById('lowColour').value;
+    let highCol = document.getElementById('highColour').value;
+    let lowColour = Colour.convertString(lowCol);
+    let highColour = Colour.convertString(highCol);
+
+    let colourMap = createColourRange(lowColour, highColour,iterationRange,iterations);
+    console.log(colourMap.size);
+
+    for (let i = 0,j=0; i < myImageData.data.length; i += 4,j++) {
+      let p = pointArray[j];
+      let colour = colourMap.get(p.iteration);
+        myImageData.data[i]     = colour.red; // red
+        myImageData.data[i + 1] = colour.green;   // green
+        myImageData.data[i + 2] = colour.blue; // blue
+        myImageData.data[i + 3] = colour.alpha; // alpha
+    }
+
+/*     for (let i = 0,j=0; i < myImageData.data.length; i += 4,j++) {
+      let p = pointArray[j];
+      if (p.iteration==iterations) { // make it black
+        myImageData.data[i]     = 0; // red
+        myImageData.data[i + 1] = 0;   // green
+        myImageData.data[i + 2] = 0; // blue
+        myImageData.data[i + 3] = 255; // alpha
+      } else {
+        myImageData.data[i]     = 255; // red
+        myImageData.data[i + 1] = 255;   // green
+        myImageData.data[i + 2] = 255; // blue
+        myImageData.data[i + 3] = 255; // alpha
+      }
+    } */
+
+    ctx.putImageData(myImageData, 0, 0);
+  } 
+
+</script>
+
+
+</body>
+
+</html>

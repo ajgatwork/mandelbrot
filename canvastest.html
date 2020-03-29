@@ -1,0 +1,127 @@
+<html>
+    <head>
+        <title>Canvas tutorial</title>
+
+        <script type="text/javascript">
+            var canvas;
+            var context; // The canvas's 2d context
+
+            function setupCanvas()
+            {
+                canvas = document.getElementById('myCanvas');
+                if (canvas.getContext)
+                {
+                    context = canvas.getContext('2d');
+                    context.fillStyle = "black";    // this is default anyway
+                    context.fillRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+
+            function init()
+            {
+                loadImages();
+                startGating();
+            }
+
+            var images = new Array();
+            var gatingTimer;
+            var curIndex, imgWidth=0, imgHeight;
+
+                // Load images
+            function loadImages()
+            {
+                for (n = 1; n <= 16; n++)
+                {
+                    images[n] = new Image();
+                    images[n].src = "qxsImages/frame" + n + ".png";
+                //  document.body.appendChild(images[n]);
+
+                    console.log("width = " + images[n].width + ", height = " + images[n].height);
+                }
+
+                curIndex = 1;
+                imgWidth = images[1].width;
+                imgHeight = images[1].height;
+            }
+
+            function redrawImages()
+            {
+                if (imgWidth == 0)
+                    return;
+
+                curIndex++;
+                if (curIndex > 16)
+                    curIndex = 1;
+
+                    // To do later: use images[1].width and .height to layout based on image size
+                for (var x=0; x<8; x++)
+                {
+                    for (var y=0; y<8; y++)
+                    {
+                        //if (x != 1)
+                    //      context.drawImage(images[curIndex], x*150, y*100);
+                        //  context.drawImage(images[curIndex], x*150, y*100, imgWidth/2, imgHeight/2); // scale
+                    //  else
+                            self.drawCustomImage(x*150, y*100);
+                    }
+                }
+            }
+
+            function drawCustomImage(xLoc, yLoc)
+            {
+                    // create a new pixel array
+                imageData = context.createImageData(imgWidth, imgHeight);
+
+                pos = 0; // index position into imagedata array
+                xoff = imgWidth / (yLoc/3); // offsets to "center"
+                yoff = imgHeight / 3;
+
+                for (y = 0; y < imgHeight; y++) 
+                {
+                    for (x = 0; x < imgWidth; x++) 
+                    {
+                        // calculate sine based on distance
+                        x2 = x - xoff;
+                        y2 = y - yoff;
+                        d = Math.sqrt(x2*x2 + y2*y2);
+                        t = Math.sin(d/6.0);
+
+                        // calculate RGB values based on sine
+                        r = t * 200;
+                        g = 125 + t * 80;
+                        b = 235 + t * 20;
+
+                        // set red, green, blue, and alpha:
+                        imageData.data[pos++] = Math.max(0,Math.min(255, r));
+                        imageData.data[pos++] = Math.max(0,Math.min(255, g));
+                        imageData.data[pos++] = Math.max(0,Math.min(255, b));
+                        imageData.data[pos++] = 255; // opaque alpha
+                    }
+                }
+
+                    // copy the image data back onto the canvas
+                context.putImageData(imageData, xLoc, yLoc);        // Works... kinda
+            //  context.putImageData(imageData, 0, 0, xLoc, yLoc, imgWidth, imgHeight);  // Doesn't work. Why?
+            }
+
+
+            function startGating()
+            {
+                gatingTimer = setInterval(redrawImages, 1000/25); // start gating
+            }
+
+            function stopGating()
+            {
+                clearInterval(gatingTimer);
+            }
+        </script>
+
+        <style type="text/css">
+            canvas { border: 1px solid black; }
+        </style>
+    </head>
+
+    <body onload="setupCanvas(); init();">
+        <canvas id="myCanvas" width="1200" height="800"></canvas>
+    </body>
+</html>
