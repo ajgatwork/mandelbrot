@@ -120,6 +120,27 @@ function createColourRange(lowColour, highColour, iterationRange, maxIterations)
   return colourMap;
 }
 
+function createRandomColourRange(iterationRange, maxIterations) {
+  let colourMap = new Map();
+
+  //number of colours that we need to generate
+  let colourCount = iterationRange.higher-iterationRange.lower;
+
+
+
+    for(let i=0;i<colourCount;i++) {
+      colourMap.set(iterationRange.lower+i,new Colour(Math.floor(Math.random()*255 +1),
+      Math.floor(Math.random()*255 +1),                                                
+      Math.floor(Math.random()*255 +1)
+                                                      ));
+    }
+
+  //want to make sure that the set is always black
+  if (iterationRange.higher == maxIterations) {
+    colourMap.set(maxIterations, new Colour(0, 0, 0));
+  } 
+    return colourMap;
+}
 
   /* function ask(question, yes, no) {
     if (confirm(question)) yes()

@@ -81,7 +81,8 @@
     let lowColour = Colour.convertString(lowCol);
     let highColour = Colour.convertString(highCol);
 
-    let colourMap = createColourRange(lowColour, highColour,iterationRange,iterations);
+    //let colourMap = createColourRange(lowColour, highColour,iterationRange,iterations);
+    let colourMap = createRandomColourRange(iterationRange, iterations);
     console.log(colourMap.size);
 
     for (let i = 0,j=0; i < myImageData.data.length; i += 4,j++) {
