@@ -30,8 +30,8 @@
 <form id="userinput">
   <p>xmin <input type="text" id="xmin" value="-2"/> xmax <input type="text" id="xmax" value="1"/></p>
   <p>ymin <input type="text" id="ymin" value="-1"/> ymax <input type="text" id="ymax" value="1"/></p>
-  <p>iterations <input type="text" id="iterations" value="1000"/></p>
-  <p>dpr <script>window.alert(window.devicePixelRatio)</script></p>
+  <p>iterations <input type="text" id="iterations" value="100"/> escape value  <input type="text" id="escape" value="4"/></p>
+  <!--<p>dpr <script>window.alert(window.devicePixelRatio)</script></p>-->
   <input type="button" id="go" value="GO!" onclick="paint()"/>
 </form>
 
@@ -73,9 +73,11 @@
     let ymin = Number(document.getElementById('ymin').value);
     let ymax = Number(document.getElementById('ymax').value);
     let iterations = Number(document.getElementById('iterations').value);
+    let escape = Number(document.getElementById('escape').value);
+    
     let pointArray = initPoints(xmin,xmax,ymin,ymax,canvas.width, canvas.height);
     // calculate the max iteration for each point, and the range
-    let iterationRange=calculate(pointArray,iterations,mbCalc);
+    let iterationRange=calculate(pointArray,iterations,mbCalc,escape);
 
     // create a colour range
     let lowCol = document.getElementById('lowColour').value;
@@ -83,13 +85,14 @@
     let lowColour = Colour.convertString(lowCol);
     let highColour = Colour.convertString(highCol);
 
-    //let colourMap = createColourRange(lowColour, highColour,iterationRange,iterations);
+    let colourMap = createColourRange(lowColour, highColour,iterationRange,iterations);
     //let colourMap = createRandomColourRange(iterationRange, iterations);
-    let colourMap = createBandWColourRange(iterationRange, iterations);
+    //let colourMap = createBandWColourRange(iterationRange, iterations);
 
     for (let i = 0,j=0; i < myImageData.data.length; i += 4,j++) {
       let p = pointArray[j];
-      let colour = colourMap.get(p.iteration);
+      let colour = hsv_to_rgb(360.0*p.smoothedIteration/iterations, 1.0, 10.0*p.smoothedIteration/iterations);
+//      let colour = colourMap.get(p.smoothedIteration);
         myImageData.data[i]     = colour.red; // red
         myImageData.data[i + 1] = colour.green;   // green
         myImageData.data[i + 2] = colour.blue; // blue

@@ -14,13 +14,13 @@ describe("pow", function() {
 describe("mbCalc tests", function() {
 
   it("should escape after 1 iterations", function() {
-    assert.equal(mbCalc(3,3,1000), 1);
-    assert.equal(mbCalc(3,3,1), 1);
-    assert.equal(mbCalc(3,1,1), 1);    
+    assert.equal(mbCalc(3,3,1000,4), 1);
+    assert.equal(mbCalc(3,3,1,4), 1);
+    assert.equal(mbCalc(3,1,1,4), 1);    
   })
 
   it("should never escape", function() {
-    assert.equal(mbCalc(0,0,1000),1000);
+    assert.equal(mbCalc(0,0,1000,4),1000);
   })
 });
 
@@ -43,7 +43,7 @@ describe("Init points for javascript canvas", function() {
 
 });
 
-function tester(x,y,maxIterations) {
+function tester(x,y,maxIterations,escape) {
   return x+y+maxIterations;
 }
 

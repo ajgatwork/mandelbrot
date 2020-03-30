@@ -10,25 +10,33 @@ function pow(x,n) {
     return result;
   }
 
+const log2 = Math.log(2);
   
-function mbCalc(x0,y0, maxIteration) {
+function mbCalc(p, maxIteration, escapeValue) {
+  
   let x2=0;
   let y2=0;
   let w=0;
   let i=0;
   let x=0;
   let y=0;
-  while ( x2+y2<=4 && i<maxIteration) {
-    x=x2-y2+x0;
-    y=w-x2-y2-y0;
+  while ( x2+y2<=escapeValue && i<maxIteration) {
+    x=x2-y2+p.x;
+    y=w-x2-y2-p.y;
     x2=x * x;
     y2=y*y;
     w=(x+y) * (x+y);
     i++;
   }
+  p.iteration=i;
+  //calculate the smoothed iteration
+  if ( i < maxIteration) {
+    p.smoothedIteration = i+1-Math.log((Math.log(x2+y2)/2)/log2)/log2;
+  } else {
+    p.smoothedIteration = maxIteration;
+  }
 
-
-  return i;
+  return p;
 }
 
 class Point {
@@ -36,6 +44,7 @@ class Point {
     this.x = x;
     this.y = y;
     this.iteration=undefined;
+    this.smoothedIteration=undefined;
   }
 }
 
@@ -79,14 +88,14 @@ function initPoints(xlower,xhigher,ylower,yhigher,widthPoints,heightPoints)
   return pointArray;
 }
 
-function calculate(pointArray,maxIteration,f) {
+function calculate(pointArray,maxIteration,f, escapeValue) {
   let lowest = maxIteration;
   let highest = 0;
 
   for(let i=0;i<pointArray.length;i++) {
-    pointArray[i].iteration = f(pointArray[i].x, pointArray[i].y, maxIteration);
-    if (pointArray[i].iteration < lowest) lowest= pointArray[i].iteration;
-    if (pointArray[i].iteration > highest) highest= pointArray[i].iteration;
+    pointArray[i] = f(pointArray[i], maxIteration,escapeValue);
+    if (pointArray[i].smoothedIteration < lowest) lowest= pointArray[i].smoothedIteration;
+    if (pointArray[i].smoothedIteration > highest) highest= pointArray[i].smoothedIteration;
   }
 
   return new IterationRange(lowest,highest);
@@ -162,6 +171,8 @@ function createBandWColourRange(iterationRange, maxIterations) {
   } 
   return colourMap;
 }
+
+
   /* function ask(question, yes, no) {
     if (confirm(question)) yes()
     else no();
@@ -172,3 +183,37 @@ function createBandWColourRange(iterationRange, maxIterations) {
     () =>  alert("You agreed.") ,
     () =>  alert("You canceled the execution.")
   ); */
+
+  /*
+ * Convert hue-saturation-value/luminosity to RGB.
+ *
+ * Input ranges:
+ *   H =   [0, 360] (integer degrees)
+ *   S = [0.0, 1.0] (float)
+ *   V = [0.0, 1.0] (float)
+ */
+function hsv_to_rgb(h, s, v)
+{
+  if ( v > 1.0 ) v = 1.0;
+  var hp = h/60.0;
+  var c = v * s;
+  var x = c*(1 - Math.abs((hp % 2) - 1));
+  var rgb = [0,0,0];
+
+  if ( 0<=hp && hp<1 ) rgb = [c, x, 0];
+  if ( 1<=hp && hp<2 ) rgb = [x, c, 0];
+  if ( 2<=hp && hp<3 ) rgb = [0, c, x];
+  if ( 3<=hp && hp<4 ) rgb = [0, x, c];
+  if ( 4<=hp && hp<5 ) rgb = [x, 0, c];
+  if ( 5<=hp && hp<6 ) rgb = [c, 0, x];
+
+  var m = v - c;
+  rgb[0] += m;
+  rgb[1] += m;
+  rgb[2] += m;
+
+  rgb[0] *= 255;
+  rgb[1] *= 255;
+  rgb[2] *= 255;
+  return new Colour(rgb[0],rgb[1],rgb[2]);
+}
