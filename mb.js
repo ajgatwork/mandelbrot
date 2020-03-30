@@ -16,15 +16,18 @@ function mbCalc(x0,y0, maxIteration) {
   let y2=0;
   let w=0;
   let i=0;
-
+  let x=0;
+  let y=0;
   while ( x2+y2<=4 && i<maxIteration) {
-    let x=x2-y2+x0;
-    let y=w-x2-y2-y0;
+    x=x2-y2+x0;
+    y=w-x2-y2-y0;
     x2=x * x;
     y2=y*y;
     w=(x+y) * (x+y);
     i++;
   }
+
+
   return i;
 }
 
@@ -126,8 +129,6 @@ function createRandomColourRange(iterationRange, maxIterations) {
   //number of colours that we need to generate
   let colourCount = iterationRange.higher-iterationRange.lower;
 
-
-
     for(let i=0;i<colourCount;i++) {
       colourMap.set(iterationRange.lower+i,new Colour(Math.floor(Math.random()*255 +1),
       Math.floor(Math.random()*255 +1),                                                
@@ -142,6 +143,25 @@ function createRandomColourRange(iterationRange, maxIterations) {
     return colourMap;
 }
 
+function createBandWColourRange(iterationRange, maxIterations) {
+  let colourMap = new Map();
+
+  //number of colours that we need to generate
+  let colourCount = iterationRange.higher-iterationRange.lower;
+    let black = new Colour(0,0,0);
+    let white = new Colour(255,255,255);
+
+    for(let i=0;i<colourCount;i++) {
+      let c = (i%2) ? white:black;
+      colourMap.set(iterationRange.lower+i,c);                                    
+    }
+
+  //want to make sure that the set is always black
+  if (iterationRange.higher == maxIterations) {
+    colourMap.set(maxIterations, black);
+  } 
+  return colourMap;
+}
   /* function ask(question, yes, no) {
     if (confirm(question)) yes()
     else no();
