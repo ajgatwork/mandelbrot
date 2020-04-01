@@ -1,32 +1,30 @@
-//var assert = require('assert');
-//var pow = require("../mb").pow;
-//var mbCalc = require("../mb").mbCalc;
-
-describe("pow", function() {
-
-    it("raises to n-th power", function() {
-      assert.equal(pow(2, 3), 8);
-      assert.equal(pow(3, 4), 81);
-    });
-  
-  });
-
-describe("mbCalc tests", function() {
-
-  it("should escape after 1 iterations", function() {
-    assert.equal(mbCalc(3,3,1000,4), 1);
-    assert.equal(mbCalc(3,3,1,4), 1);
-    assert.equal(mbCalc(3,1,1,4), 1);    
-  })
-
-  it("should never escape", function() {
-    assert.equal(mbCalc(0,0,1000,4),1000);
-  })
-});
 
 function pointsAreEqual(p1,p2) {
   return (p1.x==p2.x && p1.y==p2.y && p1.iteration==p2.iteration)
 }
+describe("mbCalc tests", function() {
+
+  it("should escape after 1 iterations", function() {
+    let p1=new Point(3,3);
+    let p1Expected = new Point(3,3);
+    p1Expected.iteration=1;
+    assert.equal(pointsAreEqual(mbCalc(p1,1000,4),p1Expected), true);
+    assert.equal(pointsAreEqual(mbCalc(p1,1,4),p1Expected), true);    
+    let p2=new Point(3,1);
+    let p2Expected = new Point(3,1);
+    p2Expected.iteration=1;
+    assert.equal(pointsAreEqual(mbCalc(p2,1,4),p2Expected), true);
+  })
+
+  it("should never escape", function() {
+    let p1=new Point(0,0);
+    let p1Expected = new Point(0,0);
+    p1Expected.iteration=1000;
+    assert.equal(pointsAreEqual(mbCalc(p1,1000,4),p1Expected), true);
+  })
+});
+
+
 
 describe("Init points for javascript canvas", function() {
 
@@ -43,15 +41,16 @@ describe("Init points for javascript canvas", function() {
 
 });
 
-function tester(x,y,maxIterations,escape) {
-  return x+y+maxIterations;
+function tester(p,maxIterations,escape) {
+  p.iteration = p.x+p.y+maxIterations;
+  return p;
 }
 
 describe("Generic calculate", function() {
 
   it("test intervals", function() {
     let pArray = initPoints(-1,1,-1,1,2,2);
-    let iterationRange = calculate(pArray,3,tester);
+    let iterationRange = calculate(pArray,3,tester,1000);
 
     let resultsArray = [];
     let p0=new Point(-1,1);

@@ -1,14 +1,5 @@
 "use strict";
 
-function pow(x,n) {
-    let result=1;
-    if (n >= 0) {
-      for(let i=n;i;i--) result *=x
-    } else {
-      for(let i=n;i;i++) result /=x;
-    }
-    return result;
-  }
 
 const log2 = Math.log(2);
   
