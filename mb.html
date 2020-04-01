@@ -89,7 +89,8 @@
 
     for (let i = 0,j=0; i < myImageData.data.length; i += 4,j++) {
       let p = pointArray[j];
-      let colour = (maxIterations==p.iterations) ? BLACK: hsv_to_rgb(360.0*p.smoothedIteration/maxIterations, 1.0, 1.0);// 10.0*p.smoothedIteration/iterations);
+
+      let colour = (maxIterations==p.iteration) ? BLACK: hsv_to_rgb(360.0*p.smoothedIteration/maxIterations, 1.0, 1.0);// 10.0*p.smoothedIteration/iterations);
         myImageData.data[i]     = colour.red; // red
         myImageData.data[i + 1] = colour.green;   // green
         myImageData.data[i + 2] = colour.blue; // blue
