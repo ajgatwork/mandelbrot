@@ -220,3 +220,58 @@ function hsv_to_rgb(h, s, v)
   rgb[2] *= 255;
   return new Colour(rgb[0],rgb[1],rgb[2]);
 }
+
+
+let highColour= "#000000";
+let lowColour = "#ff0000";
+
+function handleHighColourChange(event) {
+  highColour = event.target.value;
+}
+
+function handleLowColourChange(event) {
+  lowColour = event.target.value;
+}
+
+
+
+function paint() {
+
+  const canvas = document.getElementById('myCanvas');
+  const ctx = canvas.getContext('2d');
+  const myImageData = ctx.createImageData(canvas.width, canvas.height);
+
+  // determine the pixels to draw
+  let xmin = Number(document.getElementById('xmin').value);
+  let xmax = Number(document.getElementById('xmax').value);
+  let ymin = Number(document.getElementById('ymin').value);
+  let ymax = Number(document.getElementById('ymax').value);
+  let maxIterations = Number(document.getElementById('iterations').value);
+  let escape = Number(document.getElementById('escape').value);
+  
+  let pointArray = initPoints(xmin,xmax,ymin,ymax,canvas.width, canvas.height);
+  // calculate the max iteration for each point, and the range
+  let iterationRange=calculate(pointArray,maxIterations,mbCalc,escape);
+
+  // create a colour range
+  let lowCol = document.getElementById('lowColour').value;
+  let highCol = document.getElementById('highColour').value;
+  let lowColour = Colour.convertString(lowCol);
+  let highColour = Colour.convertString(highCol);
+
+  //let colourMap = createColourRange(lowColour, highColour,iterationRange,maxIterations);
+  //let colourMap = createRandomColourRange(iterationRange, maxIterations);
+  //let colourMap = createBandWColourRange(iterationRange, maxIterations);
+
+  for (let i = 0,j=0; i < myImageData.data.length; i += 4,j++) {
+    let p = pointArray[j];
+
+    let colour = (maxIterations==p.iteration) ? BLACK: hsv_to_rgb(360.0*p.smoothedIteration/maxIterations, 1.0, 1.0);// 10.0*p.smoothedIteration/iterations);
+      myImageData.data[i]     = colour.red; // red
+      myImageData.data[i + 1] = colour.green;   // green
+      myImageData.data[i + 2] = colour.blue; // blue
+      myImageData.data[i + 3] = colour.alpha; // alpha
+  }
+
+  ctx.putImageData(myImageData, 0, 0);
+} 
