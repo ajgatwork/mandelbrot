@@ -64,6 +64,9 @@ class Colour {
   }
 }
 
+//global const for black
+const BLACK = new Colour(0,0,0);
+
 class IterationRange {
   constructor(lower, higher) {
     this.lower=lower;
@@ -94,8 +97,8 @@ function calculate(pointArray,maxIteration,f, escapeValue) {
 
   for(let i=0;i<pointArray.length;i++) {
     pointArray[i] = f(pointArray[i], maxIteration,escapeValue);
-    if (pointArray[i].smoothedIteration < lowest) lowest= pointArray[i].smoothedIteration;
-    if (pointArray[i].smoothedIteration > highest) highest= pointArray[i].smoothedIteration;
+    if (pointArray[i].iteration < lowest) lowest= pointArray[i].iteration;
+    if (pointArray[i].iteration > highest) highest= pointArray[i].iteration;
   }
 
   return new IterationRange(lowest,highest);
@@ -113,7 +116,7 @@ function createColourRange(lowColour, highColour, iterationRange, maxIterations)
   //want to make sure that the set is always black
   if (iterationRange.higher==maxIterations) {
     colourCount--;
-    colourMap.set(maxIterations,new Colour(0,0,0));
+    colourMap.set(maxIterations,BLACK);
     colourMap.set(iterationRange.higher-1,highColour);   
   } else {
     colourMap.set(iterationRange.higher,highColour);
@@ -157,7 +160,7 @@ function createBandWColourRange(iterationRange, maxIterations) {
 
   //number of colours that we need to generate
   let colourCount = iterationRange.higher-iterationRange.lower;
-    let black = new Colour(0,0,0);
+    let black = BLACK;
     let white = new Colour(255,255,255);
 
     for(let i=0;i<colourCount;i++) {
@@ -198,14 +201,14 @@ function hsv_to_rgb(h, s, v)
   var hp = h/60.0;
   var c = v * s;
   var x = c*(1 - Math.abs((hp % 2) - 1));
-  var rgb = [0,0,0];
+  var rgb = [0,0,0]; 
 
-  if ( 0<=hp && hp<1 ) rgb = [c, x, 0];
-  if ( 1<=hp && hp<2 ) rgb = [x, c, 0];
-  if ( 2<=hp && hp<3 ) rgb = [0, c, x];
-  if ( 3<=hp && hp<4 ) rgb = [0, x, c];
-  if ( 4<=hp && hp<5 ) rgb = [x, 0, c];
-  if ( 5<=hp && hp<6 ) rgb = [c, 0, x];
+  if ( 0<=hp && hp<=1 ) rgb = [c, x, 0];
+  if ( 1<hp && hp<=2 ) rgb = [x, c, 0];
+  if ( 2<hp && hp<=3 ) rgb = [0, c, x];
+  if ( 3<hp && hp<=4 ) rgb = [0, x, c];
+  if ( 4<hp && hp<=5 ) rgb = [x, 0, c];
+  if ( 5<hp && hp<=6 ) rgb = [c, 0, x];
 
   var m = v - c;
   rgb[0] += m;
