@@ -290,8 +290,10 @@ function paint(e) {
   var start = (new Date).getTime();
   const mySecondImageData = ctx.createImageData(canvas.width, canvas.height);
   pointArray = initPoints(xmin, xmax, ymin, ymax, canvas.width, canvas.height);
+  var firstLap = (new Date).getTime();
   // calculate the max iteration for each point, and the range
   var iterationRange = calculate(pointArray, maxIterations, mbCalc, escape);
+  var secondLap = (new Date).getTime();
   for (let i = 0, j = 0; i < mySecondImageData.data.length; i += 4, j++) {
     let p = pointArray[j];
     let colour = (maxIterations == p.iteration) ? BLACK : hsv_to_rgb(360.0 * p.smoothedIteration / maxIterations, 1.0, 1.0);// 10.0*p.smoothedIteration/iterations);
@@ -303,5 +305,5 @@ function paint(e) {
   ctx.putImageData(mySecondImageData, 0, 0);
   var end = (new Date).getTime();
   var elapsed = end-start;
-  document.getElementById('time').innerHTML = elapsed+"ms which is "+(targetHeight*targetWidth*dpr*dpr)/(elapsed/1000)+"pixels/second";
+  document.getElementById('time').innerHTML = elapsed+"ms which is [initPoints:"+(firstLap-start)+"][mbcalc:"+(secondLap-firstLap)+"][render:"+(end-secondLap)+"] "+(targetHeight*targetWidth*dpr*dpr)/(elapsed/1000)+"pixels/second";
 } 
