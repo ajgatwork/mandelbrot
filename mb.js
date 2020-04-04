@@ -227,7 +227,7 @@ function handleMouseMove(e) {
   var tipCanvas = document.getElementById("tip");
   var tipCtx = tipCanvas.getContext("2d");
   if (e.offsetX < 0 || e.offsetY < 0 || pointArray==undefined) return;
-  var point = getPointForPosition(e.offsetX,e.offsetY,canvas.width);
+  var point = getPointForPosition(e.offsetX,e.offsetY,targetWidth,targetHeight,dpr);
   if (point==undefined) return;
   tipCanvas.style.left = (e.offsetX + 20) + "px";
   tipCanvas.style.top = e.offsetY + "px";
@@ -240,20 +240,20 @@ function handleMouseOut(e) {
   tipCanvas.style.left = "-400px";
 }
 
-function getPointForPosition(x,y,width) {
-  return pointArray[x + (y * width)];
+function getPointForPosition(x,y,width,height,scalingFactor) {
+  return pointArray[x*scalingFactor + (y * scalingFactor* scalingFactor * width)];
 }
 
 
 //global variables
 var pointArray=undefined;
+var dpr = window.devicePixelRatio;
+var targetWidth = 800;
+var targetHeight = 800;
+
+
 
 function paint(e) {
-
-  const canvas = document.getElementById('myCanvas');
-  const ctx = canvas.getContext('2d');
-
-  const myImageData = ctx.createImageData(canvas.width, canvas.height);
 
   // determine the pixels to draw
   let xmin = Number(document.getElementById('xmin').value);
@@ -263,10 +263,7 @@ function paint(e) {
   let maxIterations = Number(document.getElementById('iterations').value);
   let escape = Number(document.getElementById('escape').value);
 
-  pointArray = initPoints(xmin, xmax, ymin, ymax, canvas.width, canvas.height);
-  // calculate the max iteration for each point, and the range
-  let iterationRange = calculate(pointArray, maxIterations, mbCalc, escape);
-
+ 
   // create a colour range
   let lowCol = document.getElementById('lowColour').value;
   let highCol = document.getElementById('highColour').value;
@@ -277,40 +274,30 @@ function paint(e) {
   //let colourMap = createRandomColourRange(iterationRange, maxIterations);
   //let colourMap = createBandWColourRange(iterationRange, maxIterations);
 
-  for (let i = 0, j = 0; i < myImageData.data.length; i += 4, j++) {
-    let p = pointArray[j];
-    let colour = (maxIterations == p.iteration) ? BLACK : hsv_to_rgb(360.0 * p.smoothedIteration / maxIterations, 1.0, 1.0);// 10.0*p.smoothedIteration/iterations);
-    myImageData.data[i] = colour.red; // red
-    myImageData.data[i + 1] = colour.green;   // green
-    myImageData.data[i + 2] = colour.blue; // blue
-    myImageData.data[i + 3] = colour.alpha; // alpha
-  }
 
-  ctx.putImageData(myImageData, 0, 0);
-
-  /*
-  this is a test to see if you can trick canvas to display to a better quality
-  on high DPI screens.  IT works!.  Now need to do this scaling automatically with 
-  "window.devicePixelRatio".
-  */
-  const secondCanvas = document.getElementById('secondCanvas');
-  const secondCtx = secondCanvas.getContext('2d');
-  secondCanvas.width = 1600;
-  secondCanvas.height = 1600;
-  secondCanvas.style.width = "800px";
-  secondCanvas.style.height = "800px";
-  secondCtx.scale(2,2)
-  const mySecondImageData = ctx.createImageData(secondCanvas.width, secondCanvas.height);
-  var secondPointArray = initPoints(xmin, xmax, ymin, ymax, secondCanvas.width, secondCanvas.height);
+  const canvas = document.getElementById('myCanvas');
+  const ctx = canvas.getContext('2d');
+  // when dpr is > 1 it means that we are on a high DPI monitor.
+  // use of canvas pixels on a High DPI device will look very blocky
+  // the trick is to create a canvas scaled by dpr, plot the picture
+  // then scale to the size you actually want
+  // takes more processing power but pictures look a lot better
+  canvas.width = dpr * targetWidth;
+  canvas.height = dpr * targetHeight;
+  canvas.style.width = targetWidth+"px";
+  canvas.style.height = targetHeight+"px";
+  ctx.scale(dpr,dpr); //why do we need this at all, doesn't seem to do anything!
+  const mySecondImageData = ctx.createImageData(canvas.width, canvas.height);
+  pointArray = initPoints(xmin, xmax, ymin, ymax, canvas.width, canvas.height);
   // calculate the max iteration for each point, and the range
-  iterationRange = calculate(secondPointArray, maxIterations, mbCalc, escape);
+  var iterationRange = calculate(pointArray, maxIterations, mbCalc, escape);
   for (let i = 0, j = 0; i < mySecondImageData.data.length; i += 4, j++) {
-    let p = secondPointArray[j];
+    let p = pointArray[j];
     let colour = (maxIterations == p.iteration) ? BLACK : hsv_to_rgb(360.0 * p.smoothedIteration / maxIterations, 1.0, 1.0);// 10.0*p.smoothedIteration/iterations);
     mySecondImageData.data[i] = colour.red; // red
     mySecondImageData.data[i + 1] = colour.green;   // green
     mySecondImageData.data[i + 2] = colour.blue; // blue
     mySecondImageData.data[i + 3] = colour.alpha; // alpha
   }
-  secondCtx.putImageData(mySecondImageData, 0, 0);
+  ctx.putImageData(mySecondImageData, 0, 0);
 } 
