@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+
+  <title>Hello, world!</title>
+</head>
+<style>
+  #mydiv {
+    position: absolute;
+    z-index: 9;
+    background-color: #f1f1f1;
+    text-align: center;
+    border: 1px solid #d3d3d3;
+  }
+
+  #mydivheader {
+    padding: 10px;
+    cursor: move;
+    z-index: 10;
+    background-color: #2196F3;
+    color: #fff;
+  }
+
+  body {
+    background-color: ivory;
+    margin-top: 35px;
+  }
+
+  #wrapper {
+    position: relative;
+    width: 300px;
+    height: 150px;
+  }
+
+  canvas {
+    border: 1px solid red;
+  }
+
+  #tip {
+    background-color: white;
+    border: 1px solid blue;
+    position: absolute;
+    left: -200px;
+    top: 100px;
+  }
+</style>
+
+<body>
+  <h1>Hello, world!</h1>
+
+  <div id="wrapper">
+    <canvas id="graph" width=300 height=150></canvas>
+    <canvas id="tip" width=100 height=25></canvas>
+  </div>
+  <div>    
+
+  </div>
+  <br><br>
+
+  <p>x-value <span id="xvalue">xvalue</span></p>
+  <p>y-value <span id="yvalue">yvalue</span></p>
+
+  <div id="mydiv">
+    <!--<div id="mydivheader">Click here to move</div>-->
+    <p>Move</p>
+    <p>this</p>
+    <p>DIV</p>
+  </div>
+
+  <script>
+
+    function $(id) {
+      return document.getElementById(id);
+    }
+
+    // request mousemove events
+    document.getElementById("graph").onmousemove = function (e) { handleMouseMove(e); };
+    document.getElementById("graph").onmouseout = function (e) { handleMouseOut(e); };
+
+    // show tooltip 
+    function handleMouseMove(e) {
+      var tipCanvas = document.getElementById("tip");
+      var tipCtx = tipCanvas.getContext("2d");
+      tipCanvas.style.left = (e.offsetX+20) + "px";
+      tipCanvas.style.top = e.offsetY + "px";
+      tipCtx.clearRect(0, 0, tipCanvas.width, tipCanvas.height);
+      tipCtx.fillText(e.offsetX + "," + e.offsetY+" P "+e.pageX + "," + e.pageY, 5, 15);
+    }
+
+    function handleMouseOut(e) {
+      var tipCanvas = document.getElementById("tip");
+      var tipCtx = tipCanvas.getContext("2d");
+      tipCanvas.style.left = "-200px";
+    }
+
+    var graph = document.getElementById("graph");
+    var ctx = graph.getContext("2d");
+
+    var graph;
+    var xPadding = 30;
+    var yPadding = 30;
+
+    // Notice I changed The X values
+    var data = {
+      values: [
+        { X: 0, Y: 12 },
+        { X: 2, Y: 28 },
+        { X: 3, Y: 18 },
+        { X: 4, Y: 34 },
+        { X: 5, Y: 40 },
+        { X: 6, Y: 80 },
+        { X: 7, Y: 80 }
+      ]
+    };
+
+    // define tooltips for each data point
+    var dots = [];
+    for (var i = 0; i < data.values.length; i++) {
+      dots.push({
+        x: getXPixel(data.values[i].X),
+        y: getYPixel(data.values[i].Y),
+        r: 4,
+        rXr: 16,
+        color: "red",
+        tip: "text" + (i + 1)
+      });
+    }
+
+
+
+
+    // Returns the max Y value in our data list
+    function getMaxY() {
+      var max = 0;
+
+      for (var i = 0; i < data.values.length; i++) {
+        if (data.values[i].Y > max) {
+          max = data.values[i].Y;
+        }
+      }
+
+      max += 10 - max % 10;
+      return max;
+    }
+
+    // Returns the max X value in our data list
+    function getMaxX() {
+      var max = 0;
+
+      for (var i = 0; i < data.values.length; i++) {
+        if (data.values[i].X > max) {
+          max = data.values[i].X;
+        }
+      }
+
+      // omited
+      //max += 10 - max % 10;
+      return max;
+    }
+
+    // Return the x pixel for a graph point
+    function getXPixel(val) {
+      // uses the getMaxX() function
+      return ((graph.width - xPadding) / (getMaxX() + 1)) * val + (xPadding * 1.5);
+      // was
+      //return ((graph.width - xPadding) / getMaxX()) * val + (xPadding * 1.5);
+    }
+
+    // Return the y pixel for a graph point
+    function getYPixel(val) {
+      return graph.height - (((graph.height - yPadding) / getMaxY()) * val) - yPadding;
+    }
+
+    graph = document.getElementById("graph");
+    var c = graph.getContext('2d');
+
+    c.lineWidth = 2;
+    c.strokeStyle = '#333';
+    c.font = 'italic 8pt sans-serif';
+    c.textAlign = "center";
+
+    // Draw the axises
+    c.beginPath();
+    c.moveTo(xPadding, 0);
+    c.lineTo(xPadding, graph.height - yPadding);
+    c.lineTo(graph.width, graph.height - yPadding);
+    c.stroke();
+
+    // Draw the X value texts
+    var myMaxX = getMaxX();
+    for (var i = 0; i <= myMaxX; i++) {
+      // uses data.values[i].X
+      c.fillText(i, getXPixel(i), graph.height - yPadding + 20);
+    }
+    /* was
+    for(var i = 0; i < data.values.length; i ++) {
+        // uses data.values[i].X
+        c.fillText(data.values[i].X, getXPixel(data.values[i].X), graph.height - yPadding + 20);
+    }
+    */
+
+    // Draw the Y value texts
+    c.textAlign = "right"
+    c.textBaseline = "middle";
+
+    for (var i = 0; i < getMaxY(); i += 10) {
+      c.fillText(i, xPadding - 10, getYPixel(i));
+    }
+
+    c.strokeStyle = '#f00';
+
+    // Draw the line graph
+    c.beginPath();
+    c.moveTo(getXPixel(data.values[0].X), getYPixel(data.values[0].Y));
+    for (var i = 1; i < data.values.length; i++) {
+      c.lineTo(getXPixel(data.values[i].X), getYPixel(data.values[i].Y));
+    }
+    c.stroke();
+
+    // Draw the dots
+    c.fillStyle = '#333';
+
+    for (var i = 0; i < data.values.length; i++) {
+      c.beginPath();
+      c.arc(getXPixel(data.values[i].X), getYPixel(data.values[i].Y), 4, 0, Math.PI * 2, true);
+      c.fill();
+    }
+
+
+
+  </script>
+
+
+  <script>
+    //Make the DIV element draggagle:
+    dragElement(document.getElementById("mydiv"));
+
+    function dragElement(elmnt) {
+      var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+      if (document.getElementById(elmnt.id + "header")) {
+        /* if present, the header is where you move the DIV from:*/
+        document.getElementById(elmnt.id + "header").onmousedown = dragMouseDown;
+      } else {
+        /* otherwise, move the DIV from anywhere inside the DIV:*/
+        elmnt.onmousedown = dragMouseDown;
+      }
+
+      function dragMouseDown(e) {
+        e = e || window.event;
+        e.preventDefault();
+        // get the mouse cursor position at startup:
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        document.onmouseup = closeDragElement;
+        // call a function whenever the cursor moves:
+        document.onmousemove = elementDrag;
+      }
+
+      function elementDrag(e) {
+        e = e || window.event;
+        e.preventDefault();
+        // calculate the new cursor position:
+        pos1 = pos3 - e.clientX;
+        pos2 = pos4 - e.clientY;
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        // set the element's new position:
+        elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+        elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+      }
+
+      function closeDragElement() {
+        /* stop moving when mouse button is released:*/
+        document.onmouseup = null;
+        document.onmousemove = null;
+      }
+    }
+  </script>
+</body>
+
+</html>
