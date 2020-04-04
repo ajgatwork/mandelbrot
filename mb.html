@@ -1,30 +1,29 @@
 <!DOCTYPE HTML>
 <html>
-  <style>
-  
-    #wrapper {
-      position: relative;
+<style>
+  #wrapper {
+    position: relative;
 
-    }
-  
-    canvas {
-      border: 1px solid red;
-    }
-  
-    #tip {
-      background-color: white;
-      border: 1px solid blue;
-      position: absolute;
-      left: -400px;
-      top: 100px;
-    }
-  </style>
-  
+  }
+
+  canvas {
+    border: 1px solid red;
+  }
+
+  #tip {
+    background-color: white;
+    border: 1px solid blue;
+    position: absolute;
+    left: -400px;
+    top: 100px;
+  }
+</style>
+
 <body>
 
   <p>mandelbrot</p>
 
-<!--
+  <!--
   Next steps
   - colour (fixed)
   - colour (user defined)
@@ -35,40 +34,34 @@
   - move to typescript?
 -->
 
-<!-- start with big picture
+  <!-- start with big picture
  x -2 to 1  300 points
  y 1 to -1  200 points
 -->
-<form id="userinput">
-  <p>xmin <input type="text" id="xmin" value="-2"/> xmax <input type="text" id="xmax" value="1"/></p>
-  <p>ymin <input type="text" id="ymin" value="-1"/> ymax <input type="text" id="ymax" value="1"/></p>
-  <p>iterations <input type="text" id="iterations" value="100"/> escape value  <input type="text" id="escape" value="4"/></p>
-  <!--<p>dpr <script>window.alert(window.devicePixelRatio)</script></p>-->
-  <input type="button" id="go" value="GO!"/><p>Render time</p><p id="time"></p>
-</form>
+  <form id="userinput">
+    <p>xmin <input type="text" id="xmin" value="-2" /> xmax <input type="text" id="xmax" value="1" /></p>
+    <p>ymin <input type="text" id="ymin" value="-1" /> ymax <input type="text" id="ymax" value="1" /></p>
+    <p>iterations <input type="text" id="iterations" value="100" /> escape value <input type="text" id="escape"
+        value="4" /></p>
+    <!--<p>dpr <script>window.alert(window.devicePixelRatio)</script></p>-->
+    <input type="button" id="go" value="GO!" />
+    <p>Render time</p>
+    <p id="time"></p>
+  </form>
 
-<div id="html5DIV">
-  <h3>Closest to black</h3>
-  <input type="color" id="highColour" value="#ffffff" style="width:85%;">
-  <h3>furthest away</h3>
-  <input type="color" id="lowColour"  value="#0000ff" style="width:85%;">
-</div>
+  <div id="html5DIV">
+    <h3>Closest to black</h3>
+    <input type="color" id="highColour" value="#ffffff" style="width:85%;">
+    <h3>furthest away</h3>
+    <input type="color" id="lowColour" value="#0000ff" style="width:85%;">
+  </div>
 
-<div id="wrapper">
-  <canvas id="myCanvas" width="800" height="800" ></canvas>
-  <canvas id="tip" width=300 height=25></canvas>
-</div>
+  <div id="wrapper">
+    <canvas id="myCanvas" width="800" height="800"></canvas>
+    <canvas id="tip" width=300 height=25></canvas>
+  </div>
 
-
-<div id="bob">
-  <canvas id="secondCanvas" width="800" height="800" ></canvas>
-</div>
-
-
-
-
-<script src="mb.js"></script>
-
+  <script src="mb.js"></script>
 
 </body>
 
