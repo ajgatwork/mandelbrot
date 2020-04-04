@@ -16,7 +16,7 @@
       background-color: white;
       border: 1px solid blue;
       position: absolute;
-      left: -200px;
+      left: -400px;
       top: 100px;
     }
   </style>
@@ -45,8 +45,15 @@
   <p>ymin <input type="text" id="ymin" value="-1"/> ymax <input type="text" id="ymax" value="1"/></p>
   <p>iterations <input type="text" id="iterations" value="100"/> escape value  <input type="text" id="escape" value="4"/></p>
   <!--<p>dpr <script>window.alert(window.devicePixelRatio)</script></p>-->
-  <input type="button" id="go" value="GO!" onclick="paint()"/>
+  <input type="button" id="go" value="GO!"/>
 </form>
+
+<div id="html5DIV">
+  <h3>Closest to black</h3>
+  <input type="color" id="highColour" value="#ffffff" style="width:85%;">
+  <h3>furthest away</h3>
+  <input type="color" id="lowColour"  value="#0000ff" style="width:85%;">
+</div>
 
 <div id="wrapper">
   <canvas id="myCanvas" width="800" height="800" ></canvas>
@@ -54,12 +61,7 @@
 </div>
 
 
-<div id="html5DIV">
-  <h3>Closest to black</h3>
-  <input type="color" id="highColour" onchange="handleHighColourChange" value="#ffffff" style="width:85%;">
-  <h3>furthest away</h3>
-  <input type="color" id="lowColour"  onchange="handleLowColourChange" value="#0000ff" style="width:85%;">
-</div>
+
 
 
 <script src="mb.js"></script>

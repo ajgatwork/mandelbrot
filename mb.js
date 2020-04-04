@@ -216,14 +216,17 @@ function handleLowColourChange(event) {
 // request mousemove events
 document.getElementById("myCanvas").onmousemove = function (e) { handleMouseMove(e); };
 document.getElementById("myCanvas").onmouseout = function (e) { handleMouseOut(e); };
+document.getElementById("go").onclick = function (e) { paint(e); };
+document.getElementById("highColour").onchange = function (e) { handleHighColourChange(e); };
+document.getElementById("lowColour").onchange = function (e) { handleLowColourChange(e); };
 
 // show tooltip 
 function handleMouseMove(e) {
   var canvas = document.getElementById('myCanvas');
   var tipCanvas = document.getElementById("tip");
   var tipCtx = tipCanvas.getContext("2d");
-  if (e.offsetX < 0 || e.offsetY < 0) return;
-  var point = getPointForPosition(e.offsetX,e.offsetY,canvas.width,canvas.height);
+  if (e.offsetX < 0 || e.offsetY < 0 || pointArray==undefined) return;
+  var point = getPointForPosition(e.offsetX,e.offsetY,canvas.width);
   tipCanvas.style.left = (e.offsetX + 20) + "px";
   tipCanvas.style.top = e.offsetY + "px";
   tipCtx.clearRect(0, 0, tipCanvas.width, tipCanvas.height);
@@ -232,11 +235,10 @@ function handleMouseMove(e) {
 
 function handleMouseOut(e) {
   var tipCanvas = document.getElementById("tip");
-  var tipCtx = tipCanvas.getContext("2d");
-  tipCanvas.style.left = "-200px";
+  tipCanvas.style.left = "-400px";
 }
 
-function getPointForPosition(x,y,width,height) {
+function getPointForPosition(x,y,width) {
   return pointArray[x + (y * width)];
 }
 
@@ -244,7 +246,7 @@ function getPointForPosition(x,y,width,height) {
 //global variables
 var pointArray=undefined;
 
-function paint() {
+function paint(e) {
 
   const canvas = document.getElementById('myCanvas');
   const ctx = canvas.getContext('2d');
