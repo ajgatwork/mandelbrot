@@ -1,6 +1,26 @@
 <!DOCTYPE HTML>
 <html>
-
+  <style>
+  
+    #wrapper {
+      position: relative;
+      width: 300px;
+      height: 150px;
+    }
+  
+    canvas {
+      border: 1px solid red;
+    }
+  
+    #tip {
+      background-color: white;
+      border: 1px solid blue;
+      position: absolute;
+      left: -200px;
+      top: 100px;
+    }
+  </style>
+  
 <body>
 
   <p>mandelbrot</p>
@@ -28,7 +48,10 @@
   <input type="button" id="go" value="GO!" onclick="paint()"/>
 </form>
 
-<canvas id="myCanvas" width="800" height="800" style="border:1px solid #000000;"></canvas>
+<div id="wrapper">
+  <canvas id="myCanvas" width="800" height="800" ></canvas>
+  <canvas id="tip" width=300 height=25></canvas>
+</div>
 
 
 <div id="html5DIV">
