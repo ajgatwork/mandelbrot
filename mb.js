@@ -287,6 +287,7 @@ function paint(e) {
   canvas.style.width = targetWidth+"px";
   canvas.style.height = targetHeight+"px";
   ctx.scale(dpr,dpr); //why do we need this at all, doesn't seem to do anything!
+  var start = (new Date).getTime();
   const mySecondImageData = ctx.createImageData(canvas.width, canvas.height);
   pointArray = initPoints(xmin, xmax, ymin, ymax, canvas.width, canvas.height);
   // calculate the max iteration for each point, and the range
@@ -300,4 +301,7 @@ function paint(e) {
     mySecondImageData.data[i + 3] = colour.alpha; // alpha
   }
   ctx.putImageData(mySecondImageData, 0, 0);
+  var end = (new Date).getTime();
+  var elapsed = end-start;
+  document.getElementById('time').innerHTML = elapsed+"ms which is "+(targetHeight*targetWidth*dpr*dpr)/(elapsed/1000)+"pixels/second";
 } 
