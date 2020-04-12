@@ -218,8 +218,8 @@ function handleLowColourChange(event) {
 document.getElementById("myCanvas").onmousemove = function (e) { handleMouseMove(e); };
 document.getElementById("myCanvas").onmouseout = function (e) { handleMouseOut(e); };
 document.getElementById("go").onclick = function (e) { paint(e); };
-document.getElementById("highColour").onchange = function (e) { handleHighColourChange(e); };
-document.getElementById("lowColour").onchange = function (e) { handleLowColourChange(e); };
+//document.getElementById("highColour").onchange = function (e) { handleHighColourChange(e); };
+//document.getElementById("lowColour").onchange = function (e) { handleLowColourChange(e); };
 
 // show tooltip 
 function handleMouseMove(e) {
@@ -265,10 +265,10 @@ function paint(e) {
 
  
   // create a colour range
-  let lowCol = document.getElementById('lowColour').value;
-  let highCol = document.getElementById('highColour').value;
-  let lowColour = Colour.convertString(lowCol);
-  let highColour = Colour.convertString(highCol);
+  //let lowCol = document.getElementById('lowColour').value;
+  //let highCol = document.getElementById('highColour').value;
+  //let lowColour = Colour.convertString(lowCol);
+  //let highColour = Colour.convertString(highCol);
 
   //let colourMap = createColourRange(lowColour, highColour,iterationRange,maxIterations);
   //let colourMap = createRandomColourRange(iterationRange, maxIterations);
@@ -307,3 +307,41 @@ function paint(e) {
   var elapsed = end-start;
   document.getElementById('time').innerHTML = elapsed+"ms which is [initPoints:"+(firstLap-start)+"][mbcalc:"+(secondLap-firstLap)+"][render:"+(end-secondLap)+"] "+(targetHeight*targetWidth*dpr*dpr)/(elapsed/1000)+"pixels/second";
 } 
+
+
+
+  var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+
+  document.getElementById( "floating").onmousedown = dragMouseDown;
+
+
+  function dragMouseDown(e) {
+    e = e || window.event;
+    e.preventDefault();
+    // get the mouse cursor position at startup:
+    pos3 = e.clientX;
+    pos4 = e.clientY;
+    document.onmouseup = closeDragElement;
+    // call a function whenever the cursor moves:
+    document.onmousemove = elementDrag;
+  }
+
+  function elementDrag(e) {
+    e = e || window.event;
+    e.preventDefault();
+    // calculate the new cursor position:
+    pos1 = pos3 - e.clientX;
+    pos2 = pos4 - e.clientY;
+    pos3 = e.clientX;
+    pos4 = e.clientY;
+    // set the element's new position:
+    var elmnt = document.getElementById( "floating");
+    elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+    elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+  }
+
+  function closeDragElement() {
+    /* stop moving when mouse button is released:*/
+    document.onmouseup = null;
+    document.onmousemove = null;
+  }

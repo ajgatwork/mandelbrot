@@ -17,11 +17,25 @@
     left: -400px;
     top: 100px;
   }
+
+  #floating {
+    position: absolute;
+    z-index: 9;
+    background-color: #f1f1f1;
+    text-align: center;
+    border: 1px solid #d3d3d3;
+  }
+
+  #floatingheader {
+    padding: 10px;
+    cursor: move;
+    z-index: 10;
+    background-color: #2196F3;
+    color: #fff;
+  }
 </style>
 
 <body>
-
-  <p>mandelbrot</p>
 
   <!--
   Next steps
@@ -38,6 +52,7 @@
  x -2 to 1  300 points
  y 1 to -1  200 points
 -->
+<div id="floating">
   <form id="userinput">
     <p>xmin <input type="text" id="xmin" value="-2" /> xmax <input type="text" id="xmax" value="1" /></p>
     <p>ymin <input type="text" id="ymin" value="-1" /> ymax <input type="text" id="ymax" value="1" /></p>
@@ -48,13 +63,15 @@
     <p>Render time</p>
     <p id="time"></p>
   </form>
-
+</div>
+<!--
   <div id="html5DIV">
     <h3>Closest to black</h3>
     <input type="color" id="highColour" value="#ffffff" style="width:85%;">
     <h3>furthest away</h3>
     <input type="color" id="lowColour" value="#0000ff" style="width:85%;">
   </div>
+-->
 
   <div id="wrapper">
     <canvas id="myCanvas" width="800" height="800"></canvas>
