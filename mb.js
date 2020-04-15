@@ -265,18 +265,62 @@ function handleMouseUp(e) {
 //global variables
 var pointArray=undefined;
 var dpr = window.devicePixelRatio;
-var targetWidth = 800;
-var targetHeight = 800;
+
+// window.innerWidth
+// window.innerHeight
+var targetWidth = undefined;
+var targetHeight = undefined;
+let xmin = undefined;
+let xmax = undefined;
+let ymin = undefined;
+let ymax = undefined;
+
+// given the view the user wants to see, and the size of the
+// window, calculate what we are actually going to show!
+//
+// sets up the global variables
+// xmin
+// xmax
+// ymin
+// ymax
+function calculateView(xlow, xhigh, ylow, yhigh) {
+
+  //figure out ratio of the window
+  targetWidth = window.innerWidth;
+  targetHeight = window.innerHeight;
+  var windowRatio = targetWidth/targetHeight;
+
+  // if window is taller than wide
+  //   fit the width, then scale the height
+  if ( windowRatio < 1) {
+    xmin = xlow;
+    xmax = xhigh;
+    var ymid = ylow + (yhigh-ylow)/2;
+    ymin = ymid - (xhigh-xlow)/(windowRatio*2);
+    ymax = ymid + (xhigh-xlow)/(windowRatio*2);
+  }
+  else {
+    // else
+    //   fit the height, then scale the width
+    ymin = ylow;
+    ymax = yhigh;
+    var xmid = xlow + (xhigh-xlow)/2;
+    xmin = xmid - windowRatio * (yhigh-ylow)/2;
+    xmax = xlow + windowRatio * (yhigh-ylow)/2;
+  }
+
+}
+
+function firstload(e) {
+  calculateView(-2,1,-1,1);
+  paint(e);
+}
 
 
 
 function paint(e) {
 
   // determine the pixels to draw
-  let xmin = Number(document.getElementById('xmin').value);
-  let xmax = Number(document.getElementById('xmax').value);
-  let ymin = Number(document.getElementById('ymin').value);
-  let ymax = Number(document.getElementById('ymax').value);
   let maxIterations = Number(document.getElementById('iterations').value);
   let escape = Number(document.getElementById('escape').value);
 
@@ -372,3 +416,5 @@ function paint(e) {
     document.onmouseup = null;
     document.onmousemove = null;
   }
+
+window.onload = firstload;
