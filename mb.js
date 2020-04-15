@@ -218,7 +218,7 @@ function handleLowColourChange(event) {
 document.getElementById("box").onmousemove = function (e) { handleMouseMove(e); };
 document.getElementById("box").onmousedown = function (e) { handleMouseDown(e); };
 document.getElementById("box").onmouseup = function (e) { handleMouseUp(e); };
-document.getElementById("go").onclick = function (e) { paint(e); };
+document.getElementById("go").onclick = function (e) { redraw(e); };
 //document.getElementById("highColour").onchange = function (e) { handleHighColourChange(e); };
 //document.getElementById("lowColour").onchange = function (e) { handleLowColourChange(e); };
 
@@ -226,7 +226,7 @@ document.getElementById("go").onclick = function (e) { paint(e); };
 function handleMouseMove(e) {
   var position = document.getElementById("position");
   if (e.offsetX < 0 || e.offsetY < 0 || pointArray==undefined) return;
-  var point = getPointForPosition(e.offsetX,e.offsetY,targetWidth,targetHeight,dpr);
+  var point = getPointForPosition(e.offsetX,e.offsetY);
   if (point==undefined) return;
 
   var text = point.x+ "," + point.y + "  " + point.iteration + "," + point.smoothedIteration;
@@ -243,8 +243,8 @@ function handleMouseMove(e) {
 }
 
 
-function getPointForPosition(x,y,width,height,scalingFactor) {
-  return pointArray[x*scalingFactor + (y * scalingFactor* scalingFactor * width)];
+function getPointForPosition(x,y) {
+  return pointArray[x*dpr + (y * dpr* dpr * targetWidth)];
 }
 
 
@@ -260,6 +260,29 @@ function handleMouseDown(e) {
 
 function handleMouseUp(e) {
   mousedown = false;
+  var mousexEnd = e.clientX;
+  var mouseyEnd = e.clientY;
+  var xl,xh,yl,yh;
+  // this is the signal to redraw at the new coordinates
+  var cornerStartPoint = getPointForPosition(mousexStart,mouseyStart);
+  var cornerEndPoint = getPointForPosition(mousexEnd,mouseyEnd);
+  if (cornerEndPoint.x < cornerStartPoint.x)
+  {
+    xl = cornerEndPoint.x;
+    xh = cornerStartPoint.x;
+  }  else {
+    xh = cornerEndPoint.x;
+    xl = cornerStartPoint.x;
+  }
+  if (cornerEndPoint.y < cornerStartPoint.y)
+  {
+    yl = cornerEndPoint.y;
+    yh = cornerStartPoint.y;
+  }  else {
+    yh = cornerEndPoint.y;
+    yl = cornerStartPoint.y;
+  }
+  drawNewView(xl,xh,yl,yh);
 }
 
 //global variables
@@ -306,19 +329,28 @@ function calculateView(xlow, xhigh, ylow, yhigh) {
     ymax = yhigh;
     var xmid = xlow + (xhigh-xlow)/2;
     xmin = xmid - windowRatio * (yhigh-ylow)/2;
-    xmax = xlow + windowRatio * (yhigh-ylow)/2;
+    xmax = xmid + windowRatio * (yhigh-ylow)/2;
   }
 
 }
 
-function firstload(e) {
+function firstload() {
   calculateView(-2,1,-1,1);
-  paint(e);
+  paint();
+}
+
+function redraw(e) {
+  calculateView(xmin,xmax, ymin,ymax);
+  paint();
+}
+
+function   drawNewView(xl,xh,yl,yh) {
+  calculateView(xl,xh, yl,yh);
+  paint();
 }
 
 
-
-function paint(e) {
+function paint() {
 
   // determine the pixels to draw
   let maxIterations = Number(document.getElementById('iterations').value);
