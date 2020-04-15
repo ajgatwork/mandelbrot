@@ -225,26 +225,26 @@ document.getElementById("go").onclick = function (e) { redraw(e); };
 // show tooltip 
 function handleMouseMove(e) {
   var position = document.getElementById("position");
-  if (e.offsetX < 0 || e.offsetY < 0 || pointArray==undefined) return;
-  var point = getPointForPosition(e.offsetX,e.offsetY);
-  if (point==undefined) return;
+  if (e.offsetX < 0 || e.offsetY < 0 || pointArray == undefined) return;
+  var point = getPointForPosition(e.offsetX, e.offsetY);
+  if (point == undefined) return;
 
-  var text = point.x+ "," + point.y + "  " + point.iteration + "," + point.smoothedIteration;
+  var text = point.x + "," + point.y + "  " + point.iteration + "," + point.smoothedIteration;
   position.innerHTML = text;
 
-  if(mousedown) {
+  if (mousedown) {
     var boxCanvas = document.getElementById("box");
     var boxCtx = boxCanvas.getContext("2d");
-    boxCtx.clearRect(0,0,boxCanvas.width,boxCanvas.height); //clear canvas
+    boxCtx.clearRect(0, 0, boxCanvas.width, boxCanvas.height); //clear canvas
     boxCtx.strokeStyle = '#FF0000';
     boxCtx.lineWidth = 1;
-    boxCtx.strokeRect(mousexStart,mouseyStart,e.clientX-mousexStart,e.clientY-mouseyStart);
+    boxCtx.strokeRect(mousexStart, mouseyStart, e.clientX - mousexStart, e.clientY - mouseyStart);
   }
 }
 
 
-function getPointForPosition(x,y) {
-  return pointArray[x*dpr + (y * dpr* dpr * targetWidth)];
+function getPointForPosition(x, y) {
+  return pointArray[x * dpr + (y * dpr * dpr * targetWidth)];
 }
 
 
@@ -262,31 +262,67 @@ function handleMouseUp(e) {
   mousedown = false;
   var mousexEnd = e.clientX;
   var mouseyEnd = e.clientY;
-  var xl,xh,yl,yh;
+  var xl, xh, yl, yh;
   // this is the signal to redraw at the new coordinates
-  var cornerStartPoint = getPointForPosition(mousexStart,mouseyStart);
-  var cornerEndPoint = getPointForPosition(mousexEnd,mouseyEnd);
-  if (cornerEndPoint.x < cornerStartPoint.x)
-  {
+  var cornerStartPoint = getPointForPosition(mousexStart, mouseyStart);
+  var cornerEndPoint = getPointForPosition(mousexEnd, mouseyEnd);
+  if (cornerEndPoint.x < cornerStartPoint.x) {
     xl = cornerEndPoint.x;
     xh = cornerStartPoint.x;
-  }  else {
+  } else {
     xh = cornerEndPoint.x;
     xl = cornerStartPoint.x;
   }
-  if (cornerEndPoint.y < cornerStartPoint.y)
-  {
+  if (cornerEndPoint.y < cornerStartPoint.y) {
     yl = cornerEndPoint.y;
     yh = cornerStartPoint.y;
-  }  else {
+  } else {
     yh = cornerEndPoint.y;
     yl = cornerStartPoint.y;
   }
-  drawNewView(xl,xh,yl,yh);
+  drawNewView(xl, xh, yl, yh);
 }
 
+
+class Timings {
+
+  constructor() {
+    this.start = (new Date).getTime();
+    this.initPoints = undefined;
+    this.mbCalc = undefined;
+    this.render = undefined;
+  }
+
+  recordInit() {
+    this.initPoints = (new Date).getTime();
+  }
+
+  recordMbCalc() {
+    this.mbCalc = (new Date).getTime();
+  }
+
+  recordRender() {
+    this.render = (new Date).getTime();
+  }
+
+  getInitTime() {
+    return this.initPoints - this.start;
+  }
+
+  getCalcTime() {
+    return this.mbCalc - this.initPoints;
+  }
+
+  getRenderTime() {
+    return this.render - this.mbCalc;
+  }
+
+  getTotalTime() {
+    return this.render - this.start;
+  }
+}
 //global variables
-var pointArray=undefined;
+var pointArray = undefined;
 var dpr = window.devicePixelRatio;
 
 // window.innerWidth
@@ -297,6 +333,10 @@ let xmin = undefined;
 let xmax = undefined;
 let ymin = undefined;
 let ymax = undefined;
+var iterationRange;
+var timings;
+
+
 
 // given the view the user wants to see, and the size of the
 // window, calculate what we are actually going to show!
@@ -311,42 +351,45 @@ function calculateView(xlow, xhigh, ylow, yhigh) {
   //figure out ratio of the window
   targetWidth = window.innerWidth;
   targetHeight = window.innerHeight;
-  var windowRatio = targetWidth/targetHeight;
+  var windowRatio = targetWidth / targetHeight;
 
   // if window is taller than wide
   //   fit the width, then scale the height
-  if ( windowRatio < 1) {
+  if (windowRatio < 1) {
     xmin = xlow;
     xmax = xhigh;
-    var ymid = ylow + (yhigh-ylow)/2;
-    ymin = ymid - (xhigh-xlow)/(windowRatio*2);
-    ymax = ymid + (xhigh-xlow)/(windowRatio*2);
+    var ymid = ylow + (yhigh - ylow) / 2;
+    ymin = ymid - (xhigh - xlow) / (windowRatio * 2);
+    ymax = ymid + (xhigh - xlow) / (windowRatio * 2);
   }
   else {
     // else
     //   fit the height, then scale the width
     ymin = ylow;
     ymax = yhigh;
-    var xmid = xlow + (xhigh-xlow)/2;
-    xmin = xmid - windowRatio * (yhigh-ylow)/2;
-    xmax = xmid + windowRatio * (yhigh-ylow)/2;
+    var xmid = xlow + (xhigh - xlow) / 2;
+    xmin = xmid - windowRatio * (yhigh - ylow) / 2;
+    xmax = xmid + windowRatio * (yhigh - ylow) / 2;
   }
 
 }
 
 function firstload() {
-  calculateView(-2,1,-1,1);
+  calculateView(-2, 1, -1, 1);
   paint();
+  updateDisplay();
 }
 
 function redraw(e) {
-  calculateView(xmin,xmax, ymin,ymax);
+  calculateView(xmin, xmax, ymin, ymax);
   paint();
+  updateDisplay();
 }
 
-function   drawNewView(xl,xh,yl,yh) {
-  calculateView(xl,xh, yl,yh);
+function drawNewView(xl, xh, yl, yh) {
+  calculateView(xl, xh, yl, yh);
   paint();
+  updateDisplay();
 }
 
 
@@ -356,7 +399,7 @@ function paint() {
   let maxIterations = Number(document.getElementById('iterations').value);
   let escape = Number(document.getElementById('escape').value);
 
- 
+
   // create a colour range
   //let lowCol = document.getElementById('lowColour').value;
   //let highCol = document.getElementById('highColour').value;
@@ -378,9 +421,9 @@ function paint() {
   const ctx = canvas.getContext('2d');
   canvas.width = dpr * targetWidth;
   canvas.height = dpr * targetHeight;
-  canvas.style.width = targetWidth+"px";
-  canvas.style.height = targetHeight+"px";
-  ctx.scale(dpr,dpr); //why do we need this at all, doesn't seem to do anything!
+  canvas.style.width = targetWidth + "px";
+  canvas.style.height = targetHeight + "px";
+  ctx.scale(dpr, dpr); //why do we need this at all, doesn't seem to do anything!
   //make the transparent layer on top of myCanvas the same size
   const box = document.getElementById('box');
   const boxCtx = box.getContext('2d');
@@ -388,15 +431,16 @@ function paint() {
   box.height = dpr * targetHeight;
   box.style.width = canvas.style.width;
   box.style.height = canvas.style.height;
-  boxCtx.scale(dpr,dpr);
+  boxCtx.scale(dpr, dpr);
 
-  var start = (new Date).getTime();
+  timings = new Timings();
   const mySecondImageData = ctx.createImageData(canvas.width, canvas.height);
   pointArray = initPoints(xmin, xmax, ymin, ymax, canvas.width, canvas.height);
-  var firstLap = (new Date).getTime();
+  timings.recordInit();
   // calculate the max iteration for each point, and the range
-  var iterationRange = calculate(pointArray, maxIterations, mbCalc, escape);
-  var secondLap = (new Date).getTime();
+  iterationRange = calculate(pointArray, maxIterations, mbCalc, escape);
+  timings.recordMbCalc();
+
   for (let i = 0, j = 0; i < mySecondImageData.data.length; i += 4, j++) {
     let p = pointArray[j];
     let colour = (maxIterations == p.iteration) ? BLACK : hsv_to_rgb(360.0 * p.smoothedIteration / maxIterations, 1.0, 1.0);// 10.0*p.smoothedIteration/iterations);
@@ -406,52 +450,76 @@ function paint() {
     mySecondImageData.data[i + 3] = colour.alpha; // alpha
   }
   ctx.putImageData(mySecondImageData, 0, 0);
-  var end = (new Date).getTime();
-  var elapsed = end-start;
-  document.getElementById('time').innerHTML = elapsed+"ms which is [initPoints:"+(firstLap-start)+"][mbcalc:"+(secondLap-firstLap)+"][render:"+(end-secondLap)+"] "+(targetHeight*targetWidth*dpr*dpr)/(elapsed/1000)+"pixels/second";
-} 
+  timings.recordRender();
 
+}
 
+function updateDisplay() {
+  /*
+      <p>position</p>
+    <p id="positionxl"></p>
+    <p id="positionxh"></p>
+    <p id="positionyl"></p>
+    <p id="positionyh"></p>
+    <p>Iterations</p>
+    <p id="iterationMin"></p>
+    <p id="iterationMax"></p>
+    <p>Timings</p>
+    <p id="breakdown"></p>
+    <p id="rate"></p>    
+    */
 
-  var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+  document.getElementById('positionxl').innerHTML = "xmin: " + xmin;
+  document.getElementById('positionxh').innerHTML = "xmax: " + xmax;
+  document.getElementById('positionyl').innerHTML = "ymin: " + ymin;
+  document.getElementById('positionyh').innerHTML = "ymax: " + ymax;
 
-  document.getElementById( "dragger").onmousedown = dragMouseDown;
-  // call a function whenever the cursor moves:
-  document.getElementById( "dragger").onmousemove = elementDrag;
-  document.getElementById( "dragger").onmouseup = closeDragElement;
-  document.getElementById( "dragger").ommouseout = closeDragElement;
-   var draggerMoving = false;
+  document.getElementById('iterationMin').innerHTML = "Iteration min: " + iterationRange.lower;
+  document.getElementById('iterationMax').innerHTML = "Iteration max: " + iterationRange.higher;
 
-  function dragMouseDown(e) {
+  document.getElementById('breakdown').innerHTML = timings.getTotalTime() + "ms which is [initPoints:" + timings.getInitTime() + "][mbcalc:" + timings.getCalcTime() + "][render:" + timings.getRenderTime() + "]";
+  document.getElementById('rate').innerHTML = +(targetHeight * targetWidth * dpr * dpr) / (timings.getTotalTime() / 1000) + "pixels/second"
+}
+
+var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+
+document.getElementById("dragger").onmousedown = dragMouseDown;
+// call a function whenever the cursor moves:
+document.getElementById("dragger").onmousemove = elementDrag;
+document.getElementById("dragger").onmouseup = closeDragElement;
+document.getElementById("dragger").ommouseout = closeDragElement;
+var draggerMoving = false;
+
+function dragMouseDown(e) {
+  e = e || window.event;
+  e.preventDefault();
+  // get the mouse cursor position at startup:
+  pos3 = e.clientX;
+  pos4 = e.clientY;
+  //document.getElementById( "dragger").onmouseup = closeDragElement;
+  draggerMoving = true;
+
+}
+
+function elementDrag(e) {
+  if (draggerMoving) {
     e = e || window.event;
     e.preventDefault();
-    // get the mouse cursor position at startup:
+    // calculate the new cursor position:
+    pos1 = pos3 - e.clientX;
+    pos2 = pos4 - e.clientY;
     pos3 = e.clientX;
     pos4 = e.clientY;
-    //document.getElementById( "dragger").onmouseup = closeDragElement;
-    draggerMoving = true;
-
+    // set the element's new position:
+    var elmnt = document.getElementById("floating");
+    elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+    elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
   }
-
-  function elementDrag(e) {
-    if (draggerMoving) {
-      e = e || window.event;
-      e.preventDefault();
-      // calculate the new cursor position:
-      pos1 = pos3 - e.clientX;
-      pos2 = pos4 - e.clientY;
-      pos3 = e.clientX;
-      pos4 = e.clientY;
-      // set the element's new position:
-      var elmnt = document.getElementById( "floating");
-      elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
-      elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
-    }
-  }
+}
 function closeDragElement() {
-  draggerMoving=false;
-    //document.getElementById( "dragger").onmouseup = null;
-    //document.getElementById( "dragger").onmousemove = null;
-  }
+  draggerMoving = false;
+  //document.getElementById( "dragger").onmouseup = null;
+  //document.getElementById( "dragger").onmousemove = null;
+}
 
 window.onload = firstload;
