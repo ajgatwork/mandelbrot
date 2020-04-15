@@ -415,8 +415,12 @@ function paint() {
 
   var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
 
-  document.getElementById( "floating").onmousedown = dragMouseDown;
-
+  document.getElementById( "dragger").onmousedown = dragMouseDown;
+  // call a function whenever the cursor moves:
+  document.getElementById( "dragger").onmousemove = elementDrag;
+  document.getElementById( "dragger").onmouseup = closeDragElement;
+  document.getElementById( "dragger").ommouseout = closeDragElement;
+   var draggerMoving = false;
 
   function dragMouseDown(e) {
     e = e || window.event;
@@ -424,29 +428,30 @@ function paint() {
     // get the mouse cursor position at startup:
     pos3 = e.clientX;
     pos4 = e.clientY;
-    document.onmouseup = closeDragElement;
-    // call a function whenever the cursor moves:
-    document.onmousemove = elementDrag;
+    //document.getElementById( "dragger").onmouseup = closeDragElement;
+    draggerMoving = true;
+
   }
 
   function elementDrag(e) {
-    e = e || window.event;
-    e.preventDefault();
-    // calculate the new cursor position:
-    pos1 = pos3 - e.clientX;
-    pos2 = pos4 - e.clientY;
-    pos3 = e.clientX;
-    pos4 = e.clientY;
-    // set the element's new position:
-    var elmnt = document.getElementById( "floating");
-    elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
-    elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+    if (draggerMoving) {
+      e = e || window.event;
+      e.preventDefault();
+      // calculate the new cursor position:
+      pos1 = pos3 - e.clientX;
+      pos2 = pos4 - e.clientY;
+      pos3 = e.clientX;
+      pos4 = e.clientY;
+      // set the element's new position:
+      var elmnt = document.getElementById( "floating");
+      elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+      elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+    }
   }
-
-  function closeDragElement() {
-    /* stop moving when mouse button is released:*/
-    document.onmouseup = null;
-    document.onmousemove = null;
+function closeDragElement() {
+  draggerMoving=false;
+    //document.getElementById( "dragger").onmouseup = null;
+    //document.getElementById( "dragger").onmousemove = null;
   }
 
 window.onload = firstload;
