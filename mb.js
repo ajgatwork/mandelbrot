@@ -215,35 +215,52 @@ function handleLowColourChange(event) {
 }
 
 // request mousemove events
-document.getElementById("myCanvas").onmousemove = function (e) { handleMouseMove(e); };
-document.getElementById("myCanvas").onmouseout = function (e) { handleMouseOut(e); };
+document.getElementById("box").onmousemove = function (e) { handleMouseMove(e); };
+document.getElementById("box").onmousedown = function (e) { handleMouseDown(e); };
+document.getElementById("box").onmouseup = function (e) { handleMouseUp(e); };
 document.getElementById("go").onclick = function (e) { paint(e); };
 //document.getElementById("highColour").onchange = function (e) { handleHighColourChange(e); };
 //document.getElementById("lowColour").onchange = function (e) { handleLowColourChange(e); };
 
 // show tooltip 
 function handleMouseMove(e) {
-  var canvas = document.getElementById('myCanvas');
-  var tipCanvas = document.getElementById("tip");
-  var tipCtx = tipCanvas.getContext("2d");
+  var position = document.getElementById("position");
   if (e.offsetX < 0 || e.offsetY < 0 || pointArray==undefined) return;
   var point = getPointForPosition(e.offsetX,e.offsetY,targetWidth,targetHeight,dpr);
   if (point==undefined) return;
-  tipCanvas.style.left = (e.offsetX + 20) + "px";
-  tipCanvas.style.top = e.offsetY + "px";
-  tipCtx.clearRect(0, 0, tipCanvas.width, tipCanvas.height);
-  tipCtx.fillText(point.x+ "," + point.y + "  " + point.iteration + "," + point.smoothedIteration, 5, 15);
+
+  var text = point.x+ "," + point.y + "  " + point.iteration + "," + point.smoothedIteration;
+  position.innerHTML = text;
+
+  if(mousedown) {
+    var boxCanvas = document.getElementById("box");
+    var boxCtx = boxCanvas.getContext("2d");
+    boxCtx.clearRect(0,0,boxCanvas.width,boxCanvas.height); //clear canvas
+    boxCtx.strokeStyle = '#FF0000';
+    boxCtx.lineWidth = 1;
+    boxCtx.strokeRect(mousexStart,mouseyStart,e.clientX-mousexStart,e.clientY-mouseyStart);
+  }
 }
 
-function handleMouseOut(e) {
-  var tipCanvas = document.getElementById("tip");
-  tipCanvas.style.left = "-400px";
-}
 
 function getPointForPosition(x,y,width,height,scalingFactor) {
   return pointArray[x*scalingFactor + (y * scalingFactor* scalingFactor * width)];
 }
 
+
+var mousexStart = 0;
+var mouseyStart = 0;
+var mousedown = false;
+
+function handleMouseDown(e) {
+  mousexStart = e.clientX;
+  mouseyStart = e.clientY;
+  mousedown = true;
+}
+
+function handleMouseUp(e) {
+  mousedown = false;
+}
 
 //global variables
 var pointArray=undefined;
@@ -275,18 +292,28 @@ function paint(e) {
   //let colourMap = createBandWColourRange(iterationRange, maxIterations);
 
 
-  const canvas = document.getElementById('myCanvas');
-  const ctx = canvas.getContext('2d');
+
   // when dpr is > 1 it means that we are on a high DPI monitor.
   // use of canvas pixels on a High DPI device will look very blocky
   // the trick is to create a canvas scaled by dpr, plot the picture
   // then scale to the size you actually want
   // takes more processing power but pictures look a lot better
+  const canvas = document.getElementById('myCanvas');
+  const ctx = canvas.getContext('2d');
   canvas.width = dpr * targetWidth;
   canvas.height = dpr * targetHeight;
   canvas.style.width = targetWidth+"px";
   canvas.style.height = targetHeight+"px";
   ctx.scale(dpr,dpr); //why do we need this at all, doesn't seem to do anything!
+  //make the transparent layer on top of myCanvas the same size
+  const box = document.getElementById('box');
+  const boxCtx = box.getContext('2d');
+  box.width = dpr * targetWidth;
+  box.height = dpr * targetHeight;
+  box.style.width = canvas.style.width;
+  box.style.height = canvas.style.height;
+  boxCtx.scale(dpr,dpr);
+
   var start = (new Date).getTime();
   const mySecondImageData = ctx.createImageData(canvas.width, canvas.height);
   pointArray = initPoints(xmin, xmax, ymin, ymax, canvas.width, canvas.height);
