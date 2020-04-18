@@ -376,6 +376,7 @@ let ymin = undefined;
 let ymax = undefined;
 var iterationRange;
 var timings;
+let maxIterations;
 
 
 
@@ -437,7 +438,7 @@ function drawNewView(xl, xh, yl, yh) {
 function paint() {
 
   // determine the pixels to draw
-  let maxIterations = Number(document.getElementById('iterations').value);
+  //maxIterations = Number(document.getElementById('iterations').value);
   let escape = Number(document.getElementById('escape').value);
 
 
@@ -478,6 +479,11 @@ function paint() {
   const mySecondImageData = ctx.createImageData(canvas.width, canvas.height);
   pointArray = initPoints(xmin, xmax, ymin, ymax, canvas.width, canvas.height);
   timings.recordInit();
+  // guess the number of iterations that will give the best picture
+  // 130 * (x-span)^-0.3263
+  // this has problems with infinity, so need to find a reasonable limit
+  maxIterations = Math.round(130 * Math.pow(xmax-xmin,-0.3263));
+  if (maxIterations>50000) maxIterations=50000;
   // calculate the max iteration for each point, and the range
   iterationRange = calculate(pointArray, maxIterations, mbCalc, escape);
   timings.recordMbCalc();
@@ -518,6 +524,8 @@ function updateDisplay() {
     <p id="rate"></p>    
     */
 
+  document.getElementById('iterations').value = maxIterations;
+  document.getElementById('span').innerHTML = "span: " + (xmax-xmin) + " x " + (ymax-ymin);
   document.getElementById('positionxl').innerHTML = "xmin: " + xmin;
   document.getElementById('positionxh').innerHTML = "xmax: " + xmax;
   document.getElementById('positionyl').innerHTML = "ymin: " + ymin;
@@ -572,3 +580,17 @@ function closeDragElement() {
 }
 
 window.onload = firstload;
+
+/* 
+ * Data to figure out how to automatically choose the right iterations to get a good picture
+ *
+ *   Assumption is that the width/height of the view is inversely proportional to iterations
+ *   All with escape value 4
+ *   2 x 2                   iterations 100
+ *   0.09 * 0.08             iterations 300-400
+ *   0.00579 * 0.00508       iterations 700-800
+ *   0.00037011473155007524 x 0.0003250389126743247    iterations 1800-2000
+ *   0.00002446045355491977 x 0.00002148144493929749   iterations  4000-4300
+ * 
+ *   Line fit to this data: iterations = 130 * (x-span)^-0.3263
+ */   
