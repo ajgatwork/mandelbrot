@@ -200,6 +200,7 @@ function hsv_to_rgb(h, s, v) {
 }
 
 function rgb_to_hsv(rgbcolour) {
+
   var rgb = [rgbcolour.red,rgbcolour.green,rgbcolour.blue];
   rgb[0] /= 255;
   rgb[1] /= 255;
@@ -231,7 +232,7 @@ function rgb_to_hsv(rgbcolour) {
     if (v==rgb[1]) h = 60 * (2 + (rgb[2]-rgb[0])/c);
     if (v==rgb[2]) h = 60 * (4 + (rgb[0]-rgb[1])/c);
   }
-  
+
   if (v==0) {
     s = 0
   } else {
@@ -481,9 +482,13 @@ function paint() {
   iterationRange = calculate(pointArray, maxIterations, mbCalc, escape);
   timings.recordMbCalc();
 
+  const colourEnd = document.getElementById('colourend').value;
+  let colEnd = RGBColour.convertString(colourEnd);
+  let hsvColEnd = rgb_to_hsv(colEnd);
+
   for (let i = 0, j = 0; i < mySecondImageData.data.length; i += 4, j++) {
     let p = pointArray[j];
-    let colour = (maxIterations == p.iteration) ? BLACK : hsv_to_rgb(360.0 * p.smoothedIteration / maxIterations, 1.0, 1.0);// 10.0*p.smoothedIteration/iterations);
+    let colour = (maxIterations == p.iteration) ? BLACK : hsv_to_rgb(((360 * p.smoothedIteration / maxIterations)+hsvColEnd[0])%360, hsvColEnd[1], hsvColEnd[2]);
     mySecondImageData.data[i] = colour.red; // red
     mySecondImageData.data[i + 1] = colour.green;   // green
     mySecondImageData.data[i + 2] = colour.blue; // blue
@@ -492,6 +497,10 @@ function paint() {
   ctx.putImageData(mySecondImageData, 0, 0);
   timings.recordRender();
 
+}
+
+function formatNumber(num) {
+  return num.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,')
 }
 
 function updateDisplay() {
@@ -518,7 +527,7 @@ function updateDisplay() {
   document.getElementById('iterationMax').innerHTML = "Iteration max: " + iterationRange.higher;
 
   document.getElementById('breakdown').innerHTML = timings.getTotalTime() + "ms which is [initPoints:" + timings.getInitTime() + "][mbcalc:" + timings.getCalcTime() + "][render:" + timings.getRenderTime() + "]";
-  document.getElementById('rate').innerHTML = +(targetHeight * targetWidth * dpr * dpr) / (timings.getTotalTime() / 1000) + "pixels/second"
+  document.getElementById('rate').innerHTML = formatNumber(((targetHeight * targetWidth * dpr * dpr) / (timings.getTotalTime() / 1000)).toFixed(0)) + "pixels/second"
 }
 
 var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
