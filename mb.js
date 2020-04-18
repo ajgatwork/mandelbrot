@@ -40,7 +40,7 @@ class Point {
   }
 }
 
-class Colour {
+class RGBColour {
   constructor(red, green, blue) {
     this.red = red;
     this.green = green;
@@ -50,14 +50,14 @@ class Colour {
 
   static convertString(string) {
     // string in format #rrggbb
-    return new Colour(parseInt(string.substring(1, 3), 16),
+    return new RGBColour(parseInt(string.substring(1, 3), 16),
       parseInt(string.substring(3, 5), 16),
       parseInt(string.substring(5), 16));
   }
 }
 
 //global const for black
-const BLACK = new Colour(0, 0, 0);
+const BLACK = new RGBColour(0, 0, 0);
 
 class IterationRange {
   constructor(lower, higher) {
@@ -95,10 +95,7 @@ function calculate(pointArray, maxIteration, f, escapeValue) {
   return new IterationRange(lowest, highest);
 }
 
-// with iteration range 1 to 3 INCLUSIVE (3 slots)
-// lowColour - 1 (slot 1)
-// 1 slot in between 2 (slot 2)
-// highColour - 3 (slot 3)
+
 function createColourRange(lowColour, highColour, iterationRange, maxIterations) {
   let colourMap = new Map();
 
@@ -117,7 +114,7 @@ function createColourRange(lowColour, highColour, iterationRange, maxIterations)
   let greenIncrement = (lowColour.green - highColour.green) / colourCount;
 
   for (let i = 0; i < colourCount; i++) {
-    colourMap.set(iterationRange.lower + i, new Colour(Math.round(lowColour.red - (i * redIncrement)),
+    colourMap.set(iterationRange.lower + i, new RGBColour(Math.round(lowColour.red - (i * redIncrement)),
       Math.round(lowColour.green - (i * greenIncrement)),
       Math.round(lowColour.blue - (i * blueIncrement))
     ));
@@ -133,7 +130,7 @@ function createRandomColourRange(iterationRange, maxIterations) {
   let colourCount = iterationRange.higher - iterationRange.lower;
 
   for (let i = 0; i < colourCount; i++) {
-    colourMap.set(iterationRange.lower + i, new Colour(Math.floor(Math.random() * 255 + 1),
+    colourMap.set(iterationRange.lower + i, new RGBColour(Math.floor(Math.random() * 255 + 1),
       Math.floor(Math.random() * 255 + 1),
       Math.floor(Math.random() * 255 + 1)
     ));
@@ -141,7 +138,7 @@ function createRandomColourRange(iterationRange, maxIterations) {
 
   //want to make sure that the set is always black
   if (iterationRange.higher == maxIterations) {
-    colourMap.set(maxIterations, new Colour(0, 0, 0));
+    colourMap.set(maxIterations, new RGBColour(0, 0, 0));
   }
   return colourMap;
 }
@@ -152,7 +149,7 @@ function createBandWColourRange(iterationRange, maxIterations) {
   //number of colours that we need to generate
   let colourCount = iterationRange.higher - iterationRange.lower;
   let black = BLACK;
-  let white = new Colour(255, 255, 255);
+  let white = new RGBColour(255, 255, 255);
 
   for (let i = 0; i < colourCount; i++) {
     let c = (i % 2) ? white : black;
@@ -199,7 +196,49 @@ function hsv_to_rgb(h, s, v) {
   rgb[0] *= 255;
   rgb[1] *= 255;
   rgb[2] *= 255;
-  return new Colour(rgb[0], rgb[1], rgb[2]);
+  return new RGBColour(rgb[0], rgb[1], rgb[2]);
+}
+
+function rgb_to_hsv(rgbcolour) {
+  var rgb = [rgbcolour.red,rgbcolour.green,rgbcolour.blue];
+  rgb[0] /= 255;
+  rgb[1] /= 255;
+  rgb[2] /= 255;
+  var xmax,xmin;
+  var c,v,l,h,s;
+
+  if (rgb[0] < rgb[1]) {
+    xmin = rgb[0];
+    xmax = rgb[1];
+  } else {
+    xmin = rgb[1];
+    xmax = rgb[0];
+  }
+  if (xmin > rgb[2]) {
+    xmin = rgb[2];
+  }
+  if (xmax < rgb[2]) {
+    xmax = rgb[2];
+  }
+
+  v=xmax;
+  c = xmax-xmin;
+
+  if (c==0) {
+    h = 0;
+  } else {
+    if (v==rgb[0]) h = 60 * ((rgb[1]-rgb[2])/c);
+    if (v==rgb[1]) h = 60 * (2 + (rgb[2]-rgb[0])/c);
+    if (v==rgb[2]) h = 60 * (4 + (rgb[0]-rgb[1])/c);
+  }
+  
+  if (v==0) {
+    s = 0
+  } else {
+    s = c/v;
+  }
+
+  return [h,s,v];
 }
 
 
@@ -222,16 +261,17 @@ document.getElementById("go").onclick = function (e) { redraw(e); };
 //document.getElementById("highColour").onchange = function (e) { handleHighColourChange(e); };
 //document.getElementById("lowColour").onchange = function (e) { handleLowColourChange(e); };
 
-// show tooltip 
+
 function handleMouseMove(e) {
-  var position = document.getElementById("position");
+  // show position information on debug box 
   if (e.offsetX < 0 || e.offsetY < 0 || pointArray == undefined) return;
   var point = getPointForPosition(e.offsetX, e.offsetY);
   if (point == undefined) return;
-
+  var position = document.getElementById("position");
   var text = point.x + "," + point.y + "  " + point.iteration + "," + point.smoothedIteration;
   position.innerHTML = text;
 
+  //draw the selection area
   if (mousedown) {
     var boxCanvas = document.getElementById("box");
     var boxCtx = boxCanvas.getContext("2d");

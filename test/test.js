@@ -90,12 +90,12 @@ describe("Colour conversion", function() {
 
   it("converts string correctly", function() {
     let white="#ffffff";
-    let colourWhite = new Colour(255,255,255);
+    let colourWhite = new RGBColour(255,255,255);
     let black="#000000";
-    let colourBlack = new Colour(0,0,0);
+    let colourBlack = new RGBColour(0,0,0);
 
-    assert.equal(coloursEqual(Colour.convertString(white),colourWhite),true);
-    assert.equal(coloursEqual(Colour.convertString(black),colourBlack),true);
+    assert.equal(coloursEqual(RGBColour.convertString(white),colourWhite),true);
+    assert.equal(coloursEqual(RGBColour.convertString(black),colourBlack),true);
 
   });
 
@@ -104,13 +104,13 @@ describe("Colour conversion", function() {
 
   it("creates colour Range, no black", function() {
     
-    let lowColour = new Colour(2,2,2);
-    let highColour = new Colour(0,0,0);
+    let lowColour = new RGBColour(2,2,2);
+    let highColour = new RGBColour(0,0,0);
     let iterationRange = new IterationRange(1,3);
 
     let colourMap = createColourRange(lowColour, highColour,iterationRange,1000);
 
-    let colourTwo = new Colour(1,1,1);
+    let colourTwo = new RGBColour (1,1,1);
 
     assert.equal(colourMap.size, 3);
     assert.equal(coloursEqual(lowColour,colourMap.get(1)),true);
@@ -123,9 +123,9 @@ describe("Colour conversion", function() {
 
   it("creates colour Range with black", function() {
     
-    let lowColour = new Colour(2,2,2);
-    let highColour = new Colour(1,1,1);
-    let black = new Colour(0,0,0);
+    let lowColour = new RGBColour(2,2,2);
+    let highColour = new RGBColour(1,1,1);
+    let black = new RGBColour(0,0,0);
     let iterationRange = new IterationRange(1,3);
 
     let colourMap = createColourRange(lowColour, highColour,iterationRange,3);
@@ -136,6 +136,47 @@ describe("Colour conversion", function() {
     assert.equal(coloursEqual(black,colourMap.get(3)),true);
 
 
+  });
+
+  function arraysEqual(arr1,arr2) {
+
+    // if length is not equal 
+    if(arr1.length!=arr2.length) 
+      return false; 
+    else { 
+      for(var i=0;i<arr1.length;i++) {
+      if(arr1[i]!=arr2[i]) return false;
+      }
+    }
+    return true; 
+  }
+  
+  it("rgb to hsv conversion", function() {
+    
+    let cyan = [180,1,1];
+    let rgbcyan = new RGBColour(0,255,255);
+    assert.equal(arraysEqual(rgb_to_hsv(rgbcyan),cyan), true);
+
+    let red = [0,1,1];
+    let rgbred = new RGBColour(255,0,0);
+    assert.equal(arraysEqual(rgb_to_hsv(rgbred),red), true);
+
+    let black = [0,0,0];
+    let rgbblack = new RGBColour(0,0,0);
+    assert.equal(arraysEqual(rgb_to_hsv(rgbblack),black), true);
+
+    let white = [0,0,1];
+    let rgbwhite = new RGBColour(255,255,255);
+    assert.equal(arraysEqual(rgb_to_hsv(rgbwhite),white), true);
+
+    let magenta = [270,1,1];
+    let rgbmagenta = RGBColour.convertString('#8000ff');
+    let result = rgb_to_hsv(rgbmagenta);
+    // have to account for rounding errors
+    assert.equal(Math.floor(result[0]),magenta[0]);
+    assert.equal(result[1],magenta[1]);
+    assert.equal(result[2],magenta[2]);
+    console.log();
   });
 });
 
