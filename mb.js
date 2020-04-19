@@ -1,99 +1,8 @@
 "use strict";
 
 
-const log2 = Math.log(2);
 
-function mbCalc(p, maxIteration, escapeValue) {
 
-  let x2 = 0;
-  let y2 = 0;
-  let w = 0;
-  let i = 0;
-  let x = 0;
-  let y = 0;
-  while (x2 + y2 <= escapeValue && i < maxIteration) {
-    x = x2 - y2 + p.x;
-    y = w - x2 - y2 - p.y;
-    x2 = x * x;
-    y2 = y * y;
-    w = (x + y) * (x + y);
-    i++;
-  }
-  p.iteration = i;
-  //calculate the smoothed iteration
-  // see https://en.wikipedia.org/wiki/Plotting_algorithms_for_the_Mandelbrot_set
-  if (i < maxIteration) {
-    p.smoothedIteration = i + 1 - Math.log((Math.log(x2 + y2) / 2) / log2) / log2;
-  } else {
-    p.smoothedIteration = maxIteration;
-  }
-
-  return p;
-}
-
-class Point {
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
-    this.iteration = undefined;
-    this.smoothedIteration = undefined;
-  }
-}
-
-class RGBColour {
-  constructor(red, green, blue) {
-    this.red = red;
-    this.green = green;
-    this.blue = blue;
-    this.alpha = 255;
-  }
-
-  static convertString(string) {
-    // string in format #rrggbb
-    return new RGBColour(parseInt(string.substring(1, 3), 16),
-      parseInt(string.substring(3, 5), 16),
-      parseInt(string.substring(5), 16));
-  }
-}
-
-//global const for black
-const BLACK = new RGBColour(0, 0, 0);
-
-class IterationRange {
-  constructor(lower, higher) {
-    this.lower = lower;
-    this.higher = higher;
-  }
-}
-
-function initPoints(xlower, xhigher, ylower, yhigher, widthPoints, heightPoints) {
-  let w = xhigher - xlower;
-  let h = yhigher - ylower;
-  let winterval = w / widthPoints;
-  let hinterval = h / heightPoints;
-
-  let pointArray = [];
-
-  for (var j = yhigher, ycount = 0; ycount < heightPoints; j -= hinterval, ycount++) {
-    for (var i = xlower, xcount = 0; xcount < widthPoints; i += winterval, xcount++) {
-      pointArray.push(new Point(i, j));
-    }
-  }
-  return pointArray;
-}
-
-function calculate(pointArray, maxIteration, f, escapeValue) {
-  let lowest = maxIteration;
-  let highest = 0;
-
-  for (let i = 0; i < pointArray.length; i++) {
-    pointArray[i] = f(pointArray[i], maxIteration, escapeValue);
-    if (pointArray[i].iteration < lowest) lowest = pointArray[i].iteration;
-    if (pointArray[i].iteration > highest) highest = pointArray[i].iteration;
-  }
-
-  return new IterationRange(lowest, highest);
-}
 
 
 function createColourRange(lowColour, highColour, iterationRange, maxIterations) {
@@ -165,82 +74,7 @@ function createBandWColourRange(iterationRange, maxIterations) {
 
 
 
-/*
-* Convert HSV to RGB.
-* as per https://en.wikipedia.org/wiki/HSL_and_HSV#HSV_to_RGB
-*
-* Input ranges:
-*   H =   [0, 360] (integer degrees)
-*   S = [0.0, 1.0] (float)
-*   V = [0.0, 1.0] (float)
-*/
-function hsv_to_rgb(h, s, v) {
-  if (v > 1.0) v = 1.0;
-  var hp = h / 60.0;
-  var c = v * s;
-  var x = c * (1 - Math.abs((hp % 2) - 1));
-  var rgb = undefined;
 
-  if (0 <= hp && hp <= 1) rgb = [c, x, 0];
-  if (1 < hp && hp <= 2) rgb = [x, c, 0];
-  if (2 < hp && hp <= 3) rgb = [0, c, x];
-  if (3 < hp && hp <= 4) rgb = [0, x, c];
-  if (4 < hp && hp <= 5) rgb = [x, 0, c];
-  if (5 < hp && hp <= 6) rgb = [c, 0, x];
-
-  var m = v - c;
-  rgb[0] += m;
-  rgb[1] += m;
-  rgb[2] += m;
-
-  rgb[0] *= 255;
-  rgb[1] *= 255;
-  rgb[2] *= 255;
-  return new RGBColour(rgb[0], rgb[1], rgb[2]);
-}
-
-function rgb_to_hsv(rgbcolour) {
-
-  var rgb = [rgbcolour.red,rgbcolour.green,rgbcolour.blue];
-  rgb[0] /= 255;
-  rgb[1] /= 255;
-  rgb[2] /= 255;
-  var xmax,xmin;
-  var c,v,l,h,s;
-
-  if (rgb[0] < rgb[1]) {
-    xmin = rgb[0];
-    xmax = rgb[1];
-  } else {
-    xmin = rgb[1];
-    xmax = rgb[0];
-  }
-  if (xmin > rgb[2]) {
-    xmin = rgb[2];
-  }
-  if (xmax < rgb[2]) {
-    xmax = rgb[2];
-  }
-
-  v=xmax;
-  c = xmax-xmin;
-
-  if (c==0) {
-    h = 0;
-  } else {
-    if (v==rgb[0]) h = 60 * ((rgb[1]-rgb[2])/c);
-    if (v==rgb[1]) h = 60 * (2 + (rgb[2]-rgb[0])/c);
-    if (v==rgb[2]) h = 60 * (4 + (rgb[0]-rgb[1])/c);
-  }
-
-  if (v==0) {
-    s = 0
-  } else {
-    s = c/v;
-  }
-
-  return [h,s,v];
-}
 
 
 let highColour = "#000000";
@@ -325,43 +159,7 @@ function handleMouseUp(e) {
 }
 
 
-class Timings {
 
-  constructor() {
-    this.start = (new Date).getTime();
-    this.initPoints = undefined;
-    this.mbCalc = undefined;
-    this.render = undefined;
-  }
-
-  recordInit() {
-    this.initPoints = (new Date).getTime();
-  }
-
-  recordMbCalc() {
-    this.mbCalc = (new Date).getTime();
-  }
-
-  recordRender() {
-    this.render = (new Date).getTime();
-  }
-
-  getInitTime() {
-    return this.initPoints - this.start;
-  }
-
-  getCalcTime() {
-    return this.mbCalc - this.initPoints;
-  }
-
-  getRenderTime() {
-    return this.render - this.mbCalc;
-  }
-
-  getTotalTime() {
-    return this.render - this.start;
-  }
-}
 //global variables
 var pointArray = undefined;
 var dpr = window.devicePixelRatio;
@@ -414,46 +212,6 @@ function calculateView(xlow, xhigh, ylow, yhigh) {
     xmax = xmid + windowRatio * (yhigh - ylow) / 2;
   }
 
-}
-
-function firstload() {
-  calculateView(-2, 1, -1, 1);
-  paint();
-  updateDisplay();
-}
-
-function redraw(e) {
-  calculateView(xmin, xmax, ymin, ymax);
-  paint();
-  updateDisplay();
-}
-
-function drawNewView(xl, xh, yl, yh) {
-  calculateView(xl, xh, yl, yh);
-  paint();
-  updateDisplay();
-}
-
-
-function paint() {
-
-  // determine the pixels to draw
-  //maxIterations = Number(document.getElementById('iterations').value);
-  let escape = Number(document.getElementById('escape').value);
-
-
-  // create a colour range
-  //let lowCol = document.getElementById('lowColour').value;
-  //let highCol = document.getElementById('highColour').value;
-  //let lowColour = Colour.convertString(lowCol);
-  //let highColour = Colour.convertString(highCol);
-
-  //let colourMap = createColourRange(lowColour, highColour,iterationRange,maxIterations);
-  //let colourMap = createRandomColourRange(iterationRange, maxIterations);
-  //let colourMap = createBandWColourRange(iterationRange, maxIterations);
-
-
-
   // when dpr is > 1 it means that we are on a high DPI monitor.
   // use of canvas pixels on a High DPI device will look very blocky
   // the trick is to create a canvas scaled by dpr, plot the picture
@@ -475,23 +233,67 @@ function paint() {
   box.style.height = canvas.style.height;
   boxCtx.scale(dpr, dpr);
 
+    // guess the number of iterations that will give the best picture
+    // 130 * (x-span)^-0.3263
+    // this has problems with infinity, so need to find a reasonable limit
+    maxIterations = Math.round(130 * Math.pow(xmax-xmin,-0.3263));
+    if (maxIterations>50000) maxIterations=50000;
+}
+
+function firstload() {
+  calculateView(-2, 1, -1, 1);
+  handofftoworker();
+
+}
+
+function redraw(e) {
+  calculateView(xmin, xmax, ymin, ymax);
+  handofftoworker();
+}
+
+function drawNewView(xl, xh, yl, yh) {
+  calculateView(xl, xh, yl, yh);
+  handofftoworker();
+}
+
+const myWorker = new Worker("worker.js");
+
+myWorker.onmessage = function(e) {
+  // get data back - we get pointArray
+  pointArray = e.data;
+  console.log('Message received from worker',pointArray.length);
+  paint();
+}
+
+function handofftoworker() {
+  let escape = Number(document.getElementById('escape').value);
+  const canvas = document.getElementById('myCanvas');
+    // e.data contains xmin, xmax, ymin, ymax, canvas.width, canvas.height, escape, maxIterations
+    var input = [xmin,xmax,ymin,ymax, canvas.width, canvas.height, escape,maxIterations];
+    myWorker.postMessage(input);
+    console.log("posted to worker");
+}
+
+function paint() {
+
+  // determine the pixels to draw
+  //maxIterations = Number(document.getElementById('iterations').value);
+
+
   timings = new Timings();
-  const mySecondImageData = ctx.createImageData(canvas.width, canvas.height);
-  pointArray = initPoints(xmin, xmax, ymin, ymax, canvas.width, canvas.height);
-  timings.recordInit();
-  // guess the number of iterations that will give the best picture
-  // 130 * (x-span)^-0.3263
-  // this has problems with infinity, so need to find a reasonable limit
-  maxIterations = Math.round(130 * Math.pow(xmax-xmin,-0.3263));
-  if (maxIterations>50000) maxIterations=50000;
-  // calculate the max iteration for each point, and the range
-  iterationRange = calculate(pointArray, maxIterations, mbCalc, escape);
-  timings.recordMbCalc();
+
+
+  // need to get to here with pointArray populated with data
+
 
   const colourEnd = document.getElementById('colourend').value;
   let colEnd = RGBColour.convertString(colourEnd);
   let hsvColEnd = rgb_to_hsv(colEnd);
 
+
+  const canvas = document.getElementById('myCanvas');
+  const ctx = canvas.getContext('2d');
+  const mySecondImageData = ctx.createImageData(canvas.width, canvas.height);
   for (let i = 0, j = 0; i < mySecondImageData.data.length; i += 4, j++) {
     let p = pointArray[j];
     let colour = (maxIterations == p.iteration) ? BLACK : hsv_to_rgb(((360 * p.smoothedIteration / maxIterations)+hsvColEnd[0])%360, hsvColEnd[1], hsvColEnd[2]);
@@ -502,7 +304,7 @@ function paint() {
   }
   ctx.putImageData(mySecondImageData, 0, 0);
   timings.recordRender();
-
+  updateDisplay();
 }
 
 function formatNumber(num) {
@@ -531,8 +333,8 @@ function updateDisplay() {
   document.getElementById('positionyl').innerHTML = "ymin: " + ymin;
   document.getElementById('positionyh').innerHTML = "ymax: " + ymax;
 
-  document.getElementById('iterationMin').innerHTML = "Iteration min: " + iterationRange.lower;
-  document.getElementById('iterationMax').innerHTML = "Iteration max: " + iterationRange.higher;
+  //document.getElementById('iterationMin').innerHTML = "Iteration min: " + iterationRange.lower;
+  //document.getElementById('iterationMax').innerHTML = "Iteration max: " + iterationRange.higher;
 
   document.getElementById('breakdown').innerHTML = timings.getTotalTime() + "ms which is [initPoints:" + timings.getInitTime() + "][mbcalc:" + timings.getCalcTime() + "][render:" + timings.getRenderTime() + "]";
   document.getElementById('rate').innerHTML = formatNumber(((targetHeight * targetWidth * dpr * dpr) / (timings.getTotalTime() / 1000)).toFixed(0)) + "pixels/second"
