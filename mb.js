@@ -99,7 +99,7 @@ document.getElementById("go").onclick = function (e) { redraw(e); };
 
 function handleMouseMove(e) {
   // show position information on debug box 
-  if (e.offsetX < 0 || e.offsetY < 0 || pointArray == undefined) return;
+  if (e.offsetX < 0 || e.offsetY < 0) return;
   var point = getPointForPosition(e.offsetX, e.offsetY);
   if (point == undefined) return;
   var position = document.getElementById("position");
@@ -117,9 +117,19 @@ function handleMouseMove(e) {
   }
 }
 
-
+// TODO - NEED TO CHECK for pointArray[i] being undefined
 function getPointForPosition(x, y) {
-  return pointArray[x * dpr + (y * dpr * dpr * targetWidth)];
+  // pointArray is an array of arrays
+  // size of pointArray is workercount - this represents the number of sections
+  // the picture has been split into
+  var targetPixel = x * dpr + (y * dpr * dpr * targetWidth);
+  var i=0;
+  while(targetPixel > pointArray[i].length) {
+    targetPixel -= pointArray[i].length;
+    i++;
+  }
+  var a = pointArray[i];
+  return a[targetPixel];
 }
 
 
@@ -161,7 +171,6 @@ function handleMouseUp(e) {
 
 
 //global variables
-var pointArray = undefined;
 var dpr = window.devicePixelRatio;
 
 // window.innerWidth
@@ -175,8 +184,24 @@ let ymax = undefined;
 var iterationRange;
 var timings;
 let maxIterations;
+var mySecondImageData;
 
+var workercount = 128;
+var workers = [];
 
+for(var k=0;k<workercount;k++) {
+  var myWorker = new Worker("worker.js");
+  myWorker.onmessage = function(e) {
+    // get data back - we get a ReturnThing
+    console.log('Message received from worker ',e.data.name,e.data.points.length);
+    pointArray[e.data.name] = e.data.points;
+    paint(e.data.name,e.data.points);
+  }
+  workers.push(myWorker);
+}
+
+// pointArray is an array of arrays
+var pointArray = new Array(workercount);
 
 // given the view the user wants to see, and the size of the
 // window, calculate what we are actually going to show!
@@ -238,6 +263,7 @@ function calculateView(xlow, xhigh, ylow, yhigh) {
     // this has problems with infinity, so need to find a reasonable limit
     maxIterations = Math.round(130 * Math.pow(xmax-xmin,-0.3263));
     if (maxIterations>50000) maxIterations=50000;
+    mySecondImageData = ctx.createImageData(canvas.width, canvas.height);
 }
 
 function firstload() {
@@ -256,35 +282,27 @@ function drawNewView(xl, xh, yl, yh) {
   handofftoworker();
 }
 
-const myWorker = new Worker("worker.js");
 
-myWorker.onmessage = function(e) {
-  // get data back - we get pointArray
-  pointArray = e.data;
-  console.log('Message received from worker',pointArray.length);
-  paint();
-}
+
+
 
 function handofftoworker() {
   let escape = Number(document.getElementById('escape').value);
   const canvas = document.getElementById('myCanvas');
+  for(var p=0;p<workers.length;p++) {
     // e.data contains xmin, xmax, ymin, ymax, canvas.width, canvas.height, escape, maxIterations
-    var input = [xmin,xmax,ymin,ymax, canvas.width, canvas.height, escape,maxIterations];
+    var input = [xmin,xmax,ymin,ymax, canvas.width, canvas.height, escape,maxIterations,workers.length,p];
     myWorker.postMessage(input);
-    console.log("posted to worker");
+    console.log("posted to worker",p);
+  }
+
 }
 
-function paint() {
+function paint(section,sectionPoints) {
 
-  // determine the pixels to draw
-  //maxIterations = Number(document.getElementById('iterations').value);
 
 
   timings = new Timings();
-
-
-  // need to get to here with pointArray populated with data
-
 
   const colourEnd = document.getElementById('colourend').value;
   let colEnd = RGBColour.convertString(colourEnd);
@@ -293,9 +311,19 @@ function paint() {
 
   const canvas = document.getElementById('myCanvas');
   const ctx = canvas.getContext('2d');
-  const mySecondImageData = ctx.createImageData(canvas.width, canvas.height);
-  for (let i = 0, j = 0; i < mySecondImageData.data.length; i += 4, j++) {
-    let p = pointArray[j];
+
+  
+    // workercount is the number of sections to divide the picture into.
+    // section [0..n] is the section number we have points for
+    // only need to render points for this section 
+    // need to figure out where to start in the image data array
+    var sectionSize = Math.floor(canvas.height/workercount);
+    var joffset = section * sectionSize;
+    var istart = joffset * 4 * canvas.width;
+    var iupper = istart + (sectionSize*4*canvas.width);
+
+  for (let i = istart, j = 0; j < sectionPoints.length; i += 4, j++) {
+    let p = sectionPoints[j];
     let colour = (maxIterations == p.iteration) ? BLACK : hsv_to_rgb(((360 * p.smoothedIteration / maxIterations)+hsvColEnd[0])%360, hsvColEnd[1], hsvColEnd[2]);
     mySecondImageData.data[i] = colour.red; // red
     mySecondImageData.data[i + 1] = colour.green;   // green

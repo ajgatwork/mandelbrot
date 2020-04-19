@@ -30,7 +30,51 @@ function mbCalc(p, maxIteration, escapeValue) {
   }
   return p;
 }
- 
+
+/*
+ *  xlower - min x value of the entire picture we are going to render
+ *  xhigher -  max x value of the entire picture we are going to render
+ *  ylower - min y value of the entire picture we are going to render
+ *  yhigher -  max y value of the entire picture we are going to render
+ *  widthPoints - number of pixels in each row
+ *  heightPoints - number of rows (i.e. height of picture in pixels)
+ *  split - number of horizontal sections that we have split the picture into
+ *  splitindex - the section we are calculating
+ */
+function initPointsBySection(xlower, xhigher, ylower, yhigher, widthPoints, heightPoints, split, splitindex) {
+    let w = xhigher - xlower;
+    let h = yhigher - ylower;
+    let winterval = w / widthPoints;
+    let hinterval = h / heightPoints;
+  
+    let pointArray = [];
+  
+    //split is the number of sections to divide the picture into.
+    // splitindex [0..n] is the section number we are calculating
+    // only create pointArray for the section we are looking at
+    // need t figure out ycount, yhigher and where to stop
+    var sectionSize = Math.floor(heightPoints/split);
+    console.log('split ',heightPoints,' into ',split,' of ',sectionSize,' with ',sectionSize*widthPoints);
+    var ycount = splitindex * sectionSize;
+    // need to take into account that sectionSize may be rounded down, so last section needs
+    // to mop up the last remaining rows
+    var yupper;
+    if ( split-1 == splitindex) {
+        // we are processing the last section
+        yupper = heightPoints;
+    } else {
+        yupper = ycount +  sectionSize;
+    }
+
+    var j = yhigher - ycount*hinterval;
+
+    for (; ycount < yupper; j -= hinterval, ycount++) {
+      for (var i = xlower, xcount = 0; xcount < widthPoints; i += winterval, xcount++) {
+        pointArray.push(new Point(i, j));
+      }
+    }
+    return pointArray;
+  }
 
 function initPoints(xlower, xhigher, ylower, yhigher, widthPoints, heightPoints) {
     let w = xhigher - xlower;
@@ -61,9 +105,10 @@ function initPoints(xlower, xhigher, ylower, yhigher, widthPoints, heightPoints)
     return new IterationRange(lowest, highest);
   }
 
+  var splitindex; //which worker are we?
   
   onmessage = function(e) {
-    // e.data contains xmin, xmax, ymin, ymax, canvas.width, canvas.height, escape, maxIterations
+    // e.data contains xmin, xmax, ymin, ymax, canvas.width, canvas.height, escape, maxIterations, split, splitindex
     var xmin = e.data[0];
     var xmax = e.data[1];
     var ymin = e.data[2];
@@ -72,13 +117,16 @@ function initPoints(xlower, xhigher, ylower, yhigher, widthPoints, heightPoints)
     var height = e.data[5];
     var escape = e.data[6];
     var maxIterations = e.data[7];
+    var split = e.data[8];
+    splitindex = e.data[9];
     
     console.log("initpoints");
-    var pointArray = initPoints(xmin, xmax, ymin, ymax, width, height);
+    var pointArray = initPointsBySection(xmin, xmax, ymin, ymax, width, height,split,splitindex);
     
     // calculate the max iteration for each point, and the range
     var iterationRange = calculate(pointArray, maxIterations, mbCalc, escape);
-    console.log("pointArray is of length"+pointArray.length);
-    this.postMessage(pointArray);
+    console.log("onmessage: pointArray is of length "+pointArray.length);
+    var thing = new ReturnThing(splitindex, pointArray);
+    this.postMessage(thing);
     
   }
