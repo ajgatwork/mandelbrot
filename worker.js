@@ -54,7 +54,7 @@ function initPointsBySection(xlower, xhigher, ylower, yhigher, widthPoints, heig
     // only create pointArray for the section we are looking at
     // need t figure out ycount, yhigher and where to stop
     var sectionSize = Math.floor(heightPoints/split);
-    console.log('split ',heightPoints,' into ',split,' of ',sectionSize,' with ',sectionSize*widthPoints);
+    //log('split ',heightPoints,' into ',split,' of ',sectionSize,' with ',sectionSize*widthPoints);
     var ycount = splitindex * sectionSize;
     // need to take into account that sectionSize may be rounded down, so last section needs
     // to mop up the last remaining rows
@@ -107,6 +107,22 @@ function initPoints(xlower, xhigher, ylower, yhigher, widthPoints, heightPoints)
 
   var splitindex; //which worker are we?
   
+/*
+ * Need to look at speeding up transfer of data from worker to main thread.
+ * and also moving work out of the main thread.
+ * 
+ * Uint8ClampedArray is a TypedArray which is an ArrayBuffer which is transferable!
+ * so should be transferable from worker to main thread with no copying.
+ * 
+ * Uint8ClampedArray is input to image data
+ * 
+ * but, how do we move points from thread to main???
+ * 
+ * for full view of mandelbrot doing web workers is super slow, 
+ * but the advantages are defintely seen the more you zoom in
+ */
+
+
   onmessage = function(e) {
     // e.data contains xmin, xmax, ymin, ymax, canvas.width, canvas.height, escape, maxIterations, split, splitindex
     var xmin = e.data[0];
@@ -120,13 +136,14 @@ function initPoints(xlower, xhigher, ylower, yhigher, widthPoints, heightPoints)
     var split = e.data[8];
     splitindex = e.data[9];
     
-    console.log("initpoints");
+    var start = (new Date).getTime();
     var pointArray = initPointsBySection(xmin, xmax, ymin, ymax, width, height,split,splitindex);
     
     // calculate the max iteration for each point, and the range
     var iterationRange = calculate(pointArray, maxIterations, mbCalc, escape);
-    console.log("onmessage: pointArray is of length "+pointArray.length);
-    var thing = new ReturnThing(splitindex, pointArray);
+    var end = (new Date).getTime();
+    var thing = new ReturnThing(splitindex, pointArray, start,end);
+    console.log(splitindex," worker.js finished in ",end-start);
     this.postMessage(thing);
     
   }

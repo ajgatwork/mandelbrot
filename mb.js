@@ -132,6 +132,18 @@ function getPointForPosition(x, y) {
   return a[targetPixel];
 }
 
+function resetPointArray() {
+  pointArray = new Array(workercount)
+}
+
+function allPointsReturnedByWorkers() {
+  for(var i=0;i<pointArray.length;i++) {
+    if (pointArray[i] == undefined) {
+      return false;
+    }
+  }
+  return true;
+}
 
 var mousexStart = 0;
 var mouseyStart = 0;
@@ -186,14 +198,15 @@ var timings;
 let maxIterations;
 var mySecondImageData;
 
-var workercount = 128;
+var workercount = 16;
 var workers = [];
 
 for(var k=0;k<workercount;k++) {
   var myWorker = new Worker("worker.js");
   myWorker.onmessage = function(e) {
     // get data back - we get a ReturnThing
-    console.log('Message received from worker ',e.data.name,e.data.points.length);
+    var ret = (new Date).getTime();
+    console.log(e.data.name,' transfer took ',ret - e.data.end);
     pointArray[e.data.name] = e.data.points;
     paint(e.data.name,e.data.points);
   }
@@ -201,7 +214,7 @@ for(var k=0;k<workercount;k++) {
 }
 
 // pointArray is an array of arrays
-var pointArray = new Array(workercount);
+var pointArray;
 
 // given the view the user wants to see, and the size of the
 // window, calculate what we are actually going to show!
@@ -264,6 +277,8 @@ function calculateView(xlow, xhigh, ylow, yhigh) {
     maxIterations = Math.round(130 * Math.pow(xmax-xmin,-0.3263));
     if (maxIterations>50000) maxIterations=50000;
     mySecondImageData = ctx.createImageData(canvas.width, canvas.height);
+
+    resetPointArray();
 }
 
 function firstload() {
@@ -293,16 +308,13 @@ function handofftoworker() {
     // e.data contains xmin, xmax, ymin, ymax, canvas.width, canvas.height, escape, maxIterations
     var input = [xmin,xmax,ymin,ymax, canvas.width, canvas.height, escape,maxIterations,workers.length,p];
     myWorker.postMessage(input);
-    console.log("posted to worker",p);
   }
 
 }
 
 function paint(section,sectionPoints) {
 
-
-
-  timings = new Timings();
+  performance.mark('startpaint'+section);
 
   const colourEnd = document.getElementById('colourend').value;
   let colEnd = RGBColour.convertString(colourEnd);
@@ -330,8 +342,13 @@ function paint(section,sectionPoints) {
     mySecondImageData.data[i + 2] = colour.blue; // blue
     mySecondImageData.data[i + 3] = colour.alpha; // alpha
   }
-  ctx.putImageData(mySecondImageData, 0, 0);
-  timings.recordRender();
+  //if (allPointsReturnedByWorkers()) {
+    ctx.putImageData(mySecondImageData, 0, 0);
+  //}
+
+  performance.mark('endpaint'+section);
+  performance.measure('measure-'+section,'startpaint'+section,'endpaint'+section);
+  console.log(section,' paint ',performance.getEntriesByName('measure-'+section)[0].duration);
   updateDisplay();
 }
 
@@ -361,11 +378,8 @@ function updateDisplay() {
   document.getElementById('positionyl').innerHTML = "ymin: " + ymin;
   document.getElementById('positionyh').innerHTML = "ymax: " + ymax;
 
-  //document.getElementById('iterationMin').innerHTML = "Iteration min: " + iterationRange.lower;
-  //document.getElementById('iterationMax').innerHTML = "Iteration max: " + iterationRange.higher;
-
-  document.getElementById('breakdown').innerHTML = timings.getTotalTime() + "ms which is [initPoints:" + timings.getInitTime() + "][mbcalc:" + timings.getCalcTime() + "][render:" + timings.getRenderTime() + "]";
-  document.getElementById('rate').innerHTML = formatNumber(((targetHeight * targetWidth * dpr * dpr) / (timings.getTotalTime() / 1000)).toFixed(0)) + "pixels/second"
+  //document.getElementById('breakdown').innerHTML = timings.getTotalTime() + "ms which is [initPoints:" + timings.getInitTime() + "][mbcalc:" + timings.getCalcTime() + "][render:" + timings.getRenderTime() + "]";
+  //document.getElementById('rate').innerHTML = formatNumber(((targetHeight * targetWidth * dpr * dpr) / (timings.getTotalTime() / 1000)).toFixed(0)) + "pixels/second"
 }
 
 var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
