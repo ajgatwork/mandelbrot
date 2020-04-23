@@ -117,7 +117,7 @@ function handleMouseMove(e) {
   }
 }
 
-// TODO - NEED TO CHECK for pointArray[i] being undefined
+// TODO - NEED TO sort out this as we dont get pointarray any more....
 function getPointForPosition(x, y) {
   // pointArray is an array of arrays
   // size of pointArray is workercount - this represents the number of sections
@@ -207,8 +207,8 @@ for(var k=0;k<workercount;k++) {
     // get data back - we get a ReturnThing
     var ret = (new Date).getTime();
     console.log(e.data.name,' transfer took ',ret - e.data.end);
-    pointArray[e.data.name] = e.data.points;
-    paint(e.data.name,e.data.points);
+    //pointArray[e.data.name] = e.data.points;
+    paint(e.data.name,new Uint8ClampedArray(e.data.arr));
   }
   workers.push(myWorker);
 }
@@ -279,6 +279,7 @@ function calculateView(xlow, xhigh, ylow, yhigh) {
     mySecondImageData = ctx.createImageData(canvas.width, canvas.height);
 
     resetPointArray();
+
 }
 
 function firstload() {
@@ -312,7 +313,7 @@ function handofftoworker() {
 
 }
 
-function paint(section,sectionPoints) {
+function paint(section, array) {
 
   performance.mark('startpaint'+section);
 
@@ -324,7 +325,13 @@ function paint(section,sectionPoints) {
   const canvas = document.getElementById('myCanvas');
   const ctx = canvas.getContext('2d');
 
-  
+  //practice copying the array buffer
+  // if I can get this working then cann move the colour workings out
+  // to the worker, transfer the arraybuffer and remove the pointsArrray copying
+  // this should be faster
+  // then need to change the way the zoom box works to calculate the zoom area...
+
+
     // workercount is the number of sections to divide the picture into.
     // section [0..n] is the section number we have points for
     // only need to render points for this section 
@@ -334,17 +341,12 @@ function paint(section,sectionPoints) {
     var istart = joffset * 4 * canvas.width;
     var iupper = istart + (sectionSize*4*canvas.width);
 
-  for (let i = istart, j = 0; j < sectionPoints.length; i += 4, j++) {
-    let p = sectionPoints[j];
-    let colour = (maxIterations == p.iteration) ? BLACK : hsv_to_rgb(((360 * p.smoothedIteration / maxIterations)+hsvColEnd[0])%360, hsvColEnd[1], hsvColEnd[2]);
-    mySecondImageData.data[i] = colour.red; // red
-    mySecondImageData.data[i + 1] = colour.green;   // green
-    mySecondImageData.data[i + 2] = colour.blue; // blue
-    mySecondImageData.data[i + 3] = colour.alpha; // alpha
-  }
-  //if (allPointsReturnedByWorkers()) {
-    ctx.putImageData(mySecondImageData, 0, 0);
-  //}
+    for (let i = istart, j = 0; j < array.length; i++, j++) {
+     mySecondImageData.data[i] = array[j];
+    } 
+
+  ctx.putImageData(mySecondImageData, 0, 0);
+
 
   performance.mark('endpaint'+section);
   performance.measure('measure-'+section,'startpaint'+section,'endpaint'+section);

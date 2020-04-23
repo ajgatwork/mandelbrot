@@ -151,10 +151,10 @@ function hsv_to_rgb(h, s, v) {
   }
 
   class ReturnThing {
-      constructor(id, array,start,end){ 
+      constructor(id,start,end,arr){ 
           this.name = id;
-          this.points = array;
           this.start = start;
           this.end = end;
+          this.arr = arr;
       }
   }

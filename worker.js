@@ -142,8 +142,21 @@ function initPoints(xlower, xhigher, ylower, yhigher, widthPoints, heightPoints)
     // calculate the max iteration for each point, and the range
     var iterationRange = calculate(pointArray, maxIterations, mbCalc, escape);
     var end = (new Date).getTime();
-    var thing = new ReturnThing(splitindex, pointArray, start,end);
-    console.log(splitindex," worker.js finished in ",end-start);
-    this.postMessage(thing);
-    
+
+
+    var arr = new Uint8ClampedArray(width*height*4); 
+
+    for (let i = 0,j=0; j < pointArray.length; i += 4,j++) {
+        let p = pointArray[j];
+        let colour = (maxIterations == p.iteration) ? BLACK : hsv_to_rgb((360 * p.smoothedIteration / maxIterations), 1.0, 1.0);
+        arr[i] = colour.red; // red
+        arr[i + 1] = colour.green;   // green
+        arr[i + 2] = colour.blue; // blue
+        arr[i + 3] = colour.alpha; // alpha
+      }
+
+    // this should pass the arr by reference as Uint8ClampedArray is transferable
+    var thing = new ReturnThing(splitindex, start,end,arr.buffer);
+    this.postMessage(thing,[arr.buffer]);
+
   }
