@@ -112,44 +112,6 @@ function hsv_to_rgb(h, s, v) {
     return [h,s,v];
   }
 
-  class Timings {
-
-    constructor() {
-      this.start = (new Date).getTime();
-      this.initPoints = undefined;
-      this.mbCalc = undefined;
-      this.render = undefined;
-    }
-  
-    recordInit() {
-      this.initPoints = (new Date).getTime();
-    }
-  
-    recordMbCalc() {
-      this.mbCalc = (new Date).getTime();
-    }
-  
-    recordRender() {
-      this.render = (new Date).getTime();
-    }
-  
-    getInitTime() {
-      return this.initPoints - this.start;
-    }
-  
-    getCalcTime() {
-      return this.mbCalc - this.initPoints;
-    }
-  
-    getRenderTime() {
-      return this.render - this.mbCalc;
-    }
-  
-    getTotalTime() {
-      return this.render - this.start;
-    }
-  }
-
   class ReturnThing {
       constructor(id,start,end,arr){ 
           this.name = id;

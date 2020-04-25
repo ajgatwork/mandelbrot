@@ -103,7 +103,7 @@ function handleMouseMove(e) {
   var point = getPointForPosition(e.offsetX, e.offsetY);
   if (point == undefined) return;
   var position = document.getElementById("position");
-  var text = point.x + "," + point.y + "  " + point.iteration + "," + point.smoothedIteration;
+  var text = point.x + "," + point.y;
   position.innerHTML = text;
 
   //draw the selection area
@@ -117,33 +117,23 @@ function handleMouseMove(e) {
   }
 }
 
-// TODO - NEED TO sort out this as we dont get pointarray any more....
-function getPointForPosition(x, y) {
-  // pointArray is an array of arrays
-  // size of pointArray is workercount - this represents the number of sections
-  // the picture has been split into
-  var targetPixel = x * dpr + (y * dpr * dpr * targetWidth);
-  var i=0;
-  while(targetPixel > pointArray[i].length) {
-    targetPixel -= pointArray[i].length;
-    i++;
-  }
-  var a = pointArray[i];
-  return a[targetPixel];
+/*
+ * Get the x,y coordinates for a given screen position
+ *
+ * inputs - xscreen - number of pixels to the right from the top left corner
+ *          yscreen - number of pixels down from the top left corner
+ */
+function getPointForPosition(xscreen, yscreen) {
+  // figure out the ratio of mouse position to the canvas, for x and y
+  var xratio = xscreen / targetWidth;
+  var yratio = yscreen / targetHeight;
+
+  var x = xmin + (xmax - xmin) * xratio;
+  var y = ymax - (ymax - ymin) * yratio;
+
+  return new Point(x, y);
 }
 
-function resetPointArray() {
-  pointArray = new Array(workercount)
-}
-
-function allPointsReturnedByWorkers() {
-  for(var i=0;i<pointArray.length;i++) {
-    if (pointArray[i] == undefined) {
-      return false;
-    }
-  }
-  return true;
-}
 
 var mousexStart = 0;
 var mouseyStart = 0;
@@ -185,36 +175,54 @@ function handleMouseUp(e) {
 //global variables
 var dpr = window.devicePixelRatio;
 
-// window.innerWidth
-// window.innerHeight
 var targetWidth = undefined;
 var targetHeight = undefined;
 let xmin = undefined;
 let xmax = undefined;
 let ymin = undefined;
 let ymax = undefined;
-var iterationRange;
-var timings;
 let maxIterations;
-var mySecondImageData;
+
+var start;
+function startTiming() {
+  start = (new Date).getTime();
+}
 
 var workercount = 16;
 var workers = [];
 
-for(var k=0;k<workercount;k++) {
+var workerStatus = new Array(workercount);
+
+function resetStatus() {
+  for (var i = 0; i < workerStatus.length; i++)
+    workerStatus[i] = 0;
+}
+
+function recordFinished(worker) {
+  workerStatus[worker] = 1;
+}
+
+function workerCompleteCount() {
+  var c = 0;
+  for (var i = 0; i < workerStatus.length; i++) {
+    c += workerStatus[i];
+  }
+  return c
+}
+function allWorkersComplete() {
+  return (workerCompleteCount() == workerStatus.length);
+}
+
+for (var k = 0; k < workercount; k++) {
   var myWorker = new Worker("worker.js");
-  myWorker.onmessage = function(e) {
+  myWorker.onmessage = function (e) {
     // get data back - we get a ReturnThing
-    var ret = (new Date).getTime();
-    console.log(e.data.name,' transfer took ',ret - e.data.end);
-    //pointArray[e.data.name] = e.data.points;
-    paint(e.data.name,new Uint8ClampedArray(e.data.arr));
+    recordFinished(e.data.name);
+    paint(e.data.name, new Uint8ClampedArray(e.data.arr));
   }
   workers.push(myWorker);
 }
 
-// pointArray is an array of arrays
-var pointArray;
 
 // given the view the user wants to see, and the size of the
 // window, calculate what we are actually going to show!
@@ -271,16 +279,16 @@ function calculateView(xlow, xhigh, ylow, yhigh) {
   box.style.height = canvas.style.height;
   boxCtx.scale(dpr, dpr);
 
-    // guess the number of iterations that will give the best picture
-    // 130 * (x-span)^-0.3263
-    // this has problems with infinity, so need to find a reasonable limit
-    maxIterations = Math.round(130 * Math.pow(xmax-xmin,-0.3263));
-    if (maxIterations>50000) maxIterations=50000;
-    mySecondImageData = ctx.createImageData(canvas.width, canvas.height);
+  // guess the number of iterations that will give the best picture
+  // 130 * (x-span)^-0.3263
+  // this has problems with infinity, so need to find a reasonable limit
+  maxIterations = Math.round(130 * Math.pow(xmax - xmin, -0.3263));
+  if (maxIterations > 50000) maxIterations = 50000;
 
-    resetPointArray();
-
+  resetStatus();
+  startTiming();
 }
+
 
 function firstload() {
   calculateView(-2, 1, -1, 1);
@@ -300,57 +308,36 @@ function drawNewView(xl, xh, yl, yh) {
 
 
 
-
-
 function handofftoworker() {
   let escape = Number(document.getElementById('escape').value);
   const canvas = document.getElementById('myCanvas');
-  for(var p=0;p<workers.length;p++) {
+  for (var p = 0; p < workers.length; p++) {
     // e.data contains xmin, xmax, ymin, ymax, canvas.width, canvas.height, escape, maxIterations
-    var input = [xmin,xmax,ymin,ymax, canvas.width, canvas.height, escape,maxIterations,workers.length,p];
-    myWorker.postMessage(input);
+    var input = [xmin, xmax, ymin, ymax, canvas.width, canvas.height, escape, maxIterations, workers.length, p];
+    workers[p].postMessage(input);
   }
 
 }
 
-function paint(section, array) {
-
-  performance.mark('startpaint'+section);
+ function paint(section, array) {
 
   const colourEnd = document.getElementById('colourend').value;
   let colEnd = RGBColour.convertString(colourEnd);
   let hsvColEnd = rgb_to_hsv(colEnd);
 
-
   const canvas = document.getElementById('myCanvas');
   const ctx = canvas.getContext('2d');
 
-  //practice copying the array buffer
-  // if I can get this working then cann move the colour workings out
-  // to the worker, transfer the arraybuffer and remove the pointsArrray copying
-  // this should be faster
-  // then need to change the way the zoom box works to calculate the zoom area...
+  // workercount is the number of sections to divide the picture into.
+  // section [0..n] is the section number we have points for
+  // only need to render points for this section 
+  // need to figure out where to start in the image data array
+  var sectionSize = Math.floor(canvas.height / workercount);
+  var joffset = section * sectionSize;
 
+  var imagePart = new ImageData(array, canvas.width);
 
-    // workercount is the number of sections to divide the picture into.
-    // section [0..n] is the section number we have points for
-    // only need to render points for this section 
-    // need to figure out where to start in the image data array
-    var sectionSize = Math.floor(canvas.height/workercount);
-    var joffset = section * sectionSize;
-    var istart = joffset * 4 * canvas.width;
-    var iupper = istart + (sectionSize*4*canvas.width);
-
-    for (let i = istart, j = 0; j < array.length; i++, j++) {
-     mySecondImageData.data[i] = array[j];
-    } 
-
-  ctx.putImageData(mySecondImageData, 0, 0);
-
-
-  performance.mark('endpaint'+section);
-  performance.measure('measure-'+section,'startpaint'+section,'endpaint'+section);
-  console.log(section,' paint ',performance.getEntriesByName('measure-'+section)[0].duration);
+  ctx.putImageData(imagePart, 0, joffset);
   updateDisplay();
 }
 
@@ -374,14 +361,18 @@ function updateDisplay() {
     */
 
   document.getElementById('iterations').value = maxIterations;
-  document.getElementById('span').innerHTML = "span: " + (xmax-xmin) + " x " + (ymax-ymin);
+  document.getElementById('span').innerHTML = "span: " + (xmax - xmin) + " x " + (ymax - ymin);
   document.getElementById('positionxl').innerHTML = "xmin: " + xmin;
   document.getElementById('positionxh').innerHTML = "xmax: " + xmax;
   document.getElementById('positionyl').innerHTML = "ymin: " + ymin;
   document.getElementById('positionyh').innerHTML = "ymax: " + ymax;
 
-  //document.getElementById('breakdown').innerHTML = timings.getTotalTime() + "ms which is [initPoints:" + timings.getInitTime() + "][mbcalc:" + timings.getCalcTime() + "][render:" + timings.getRenderTime() + "]";
-  //document.getElementById('rate').innerHTML = formatNumber(((targetHeight * targetWidth * dpr * dpr) / (timings.getTotalTime() / 1000)).toFixed(0)) + "pixels/second"
+  var now = (new Date).getTime();
+  //calculate approximate time to render picture up to this point
+  var pixelsInImage = dpr*dpr*targetHeight*targetWidth;
+  var roughIdeaOfPixelsGenerated = workerCompleteCount() * pixelsInImage / workercount;
+
+  document.getElementById('rate').innerHTML = formatNumber((roughIdeaOfPixelsGenerated / ((now-start) / 1000)).toFixed(0)) + " pixels/second ("+workerCompleteCount()+"/"+workercount+")";
 }
 
 var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
@@ -427,7 +418,7 @@ function closeDragElement() {
 
 window.onload = firstload;
 
-/* 
+/*
  * Data to figure out how to automatically choose the right iterations to get a good picture
  *
  *   Assumption is that the width/height of the view is inversely proportional to iterations
@@ -437,6 +428,6 @@ window.onload = firstload;
  *   0.00579 * 0.00508       iterations 700-800
  *   0.00037011473155007524 x 0.0003250389126743247    iterations 1800-2000
  *   0.00002446045355491977 x 0.00002148144493929749   iterations  4000-4300
- * 
+ *
  *   Line fit to this data: iterations = 130 * (x-span)^-0.3263
- */   
+ */
