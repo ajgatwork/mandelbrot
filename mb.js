@@ -48,7 +48,16 @@ document.getElementById("box").onmousemove = function (e) { handleMouseMove(e); 
 document.getElementById("box").onmousedown = function (e) { handleMouseDown(e); };
 document.getElementById("box").onmouseup = function (e) { handleMouseUp(e); };
 document.getElementById("go").onclick = function (e) { redraw(e); };
-document.getElementById("reset").onclick = function (e) { firstload(); };
+
+// still need to sort out the rest/go buttons. dont work properly when
+// switching between fractals
+document.getElementById("reset").onclick = function (e) { 
+  if (  document.getElementById('fractalmb').checked ) {
+    firstLoadMandelbrot();
+  } else{
+    firstLoadBurningShip();
+  }
+ };
 
 function handleMouseMove(e) {
   // show position information on debug box 
@@ -295,13 +304,23 @@ function initialiseForView(xlow, xhigh, ylow, yhigh) {
 }
 
 
-function firstload() {
+function firstLoadMandelbrot() {
   document.getElementById('colourend').value="#ff0000";
   document.getElementById('autoiterations').checked=true;
   document.getElementById('escape').value=4;
+  document.getElementById('fractalmb').checked=true;
   initialiseForView(-2, 1, -1, 1);
   handofftoworker();
+}
 
+function firstLoadBurningShip() {
+  document.getElementById('colourend').value="#ff0000";
+  document.getElementById('autoiterations').checked=false;
+  document.getElementById('iterations').value=64;
+  document.getElementById('escape').value=4;
+  document.getElementById('fractalbs').checked=true;
+  initialiseForView(-2, 1, -3, 1);
+  handofftoworker();
 }
 
 function redraw(e) {
@@ -317,9 +336,13 @@ function drawNewView(xl, xh, yl, yh) {
 function handofftoworker() {
   let escape = Number(document.getElementById('escape').value);
   const canvas = document.getElementById('myCanvas');
+  var fractal = 'mb';
+  if (document.getElementById('fractalbs').checked) {
+    fractal='bs';
+  }
   for (var p = 0; p < workers.length; p++) {
-    // e.data contains xmin, xmax, ymin, ymax, canvas.width, canvas.height, escape, maxIterations, split, splitindex, colourEnd
-    var input = [xmin, xmax, ymin, ymax, canvas.width, canvas.height, escape, maxIterations, workers.length, p, colourEnd];
+    // e.data contains xmin, xmax, ymin, ymax, canvas.width, canvas.height, escape, maxIterations, split, splitindex, colourEnd, fractal
+    var input = [xmin, xmax, ymin, ymax, canvas.width, canvas.height, escape, maxIterations, workers.length, p, colourEnd, fractal];
     workers[p].postMessage(input);
   }
 
@@ -422,7 +445,7 @@ function closeDragElement() {
   //document.getElementById( "dragger").onmousemove = null;
 }
 
-window.onload = firstload;
+window.onload = firstLoadBurningShip;
 
 /*
  * Data to figure out how to automatically choose the right iterations to get a good picture

@@ -51,6 +51,9 @@ function burningshipCalc(p, maxIteration, escapeValue) {
     p.iteration = i;
     if (i < maxIteration) {
         p.smoothedIteration = i + 1 - Math.log((Math.log(zx2 + zy2) / 2) / log2) / log2;
+        // this is a bit naff - must have something wrong in the equation
+        // or it doesnt apply to burning ship?
+        if (p.smoothedIteration < 0) p.smoothedIteration=0;
     } else {
         p.smoothedIteration = maxIteration;
     }
@@ -158,6 +161,7 @@ class Point {
 *   V = [0.0, 1.0] (float)
 */
 function hsv_to_rgb(h, s, v) {
+    if (h<0) h=0;
     if (v > 1.0) v = 1.0;
     var hp = h / 60.0;
     var c = v * s;
@@ -236,7 +240,7 @@ function hsv_to_rgb(h, s, v) {
 }
 
 onmessage = function (e) {
-    // e.data contains xmin, xmax, ymin, ymax, canvas.width, canvas.height, escape, maxIterations, split, splitindex, colourEnd
+    // e.data contains xmin, xmax, ymin, ymax, canvas.width, canvas.height, escape, maxIterations, split, splitindex, colourEnd, fractal
     var xmin = e.data[0];
     var xmax = e.data[1];
     var ymin = e.data[2];
@@ -248,12 +252,17 @@ onmessage = function (e) {
     var split = e.data[8];
     splitindex = e.data[9];
     var colourEnd = e.data[10];
+    var fractal = e.data[11];
 
     var start = (new Date).getTime();
     var pointArray = initPointsBySection(xmin, xmax, ymin, ymax, width, height, split, splitindex);
 
     // calculate the max iteration for each point, and the range
-    var totalIterationCount = calculate(pointArray, maxIterations, mbCalc, escape);
+    var fractalfunction = mbCalc;
+    if (fractal == 'bs') {
+        fractalfunction = burningshipCalc;
+    }
+    var totalIterationCount = calculate(pointArray, maxIterations, fractalfunction, escape);
     var end = (new Date).getTime();
 
     let colEnd = RGBColour.convertString(colourEnd);
