@@ -47,7 +47,25 @@ function createBandWColourRange(iterationRange, maxIterations) {
 document.getElementById("box").onmousemove = function (e) { handleMouseMove(e); };
 document.getElementById("box").onmousedown = function (e) { handleMouseDown(e); };
 document.getElementById("box").onmouseup = function (e) { handleMouseUp(e); };
-document.getElementById("go").onclick = function (e) { redraw(e); };
+document.getElementById("go").onclick = function (e) { 
+  var radiobutton;
+  if (document.getElementById('fractalmb').checked ) {
+    radiobutton = MANDELBROT;
+  } else {
+    radiobutton = BURNING_SHIP;
+  }
+  if (radiobutton==fractalType) {
+    // just redraw the current fractaltype, current view, but with new iterations/colours
+    redraw(e); 
+  } else {
+    if (radiobutton==MANDELBROT) {
+      firstLoadMandelbrot()
+    } else {
+      firstLoadBurningShip();
+    }
+  }
+
+};
 
 // still need to sort out the rest/go buttons. dont work properly when
 // switching between fractals
@@ -86,12 +104,21 @@ function handleMouseMove(e) {
  *          yscreen - number of pixels down from the top left corner
  */
 function getPointForPosition(xscreen, yscreen) {
-  // figure out the ratio of mouse position to the canvas, for x and y
-  var xratio = xscreen / targetWidth;
-  var yratio = yscreen / targetHeight;
+    // figure out the ratio of mouse position to the canvas, for x and y
+    var xratio = xscreen / targetWidth;
+    var yratio = yscreen / targetHeight;
+    var x,y;
+  if (fractalType==BURNING_SHIP) {
+    // this is rendered so that x and y axis are mirrored
+    x = xmax - (xmax - xmin) * xratio;
+    y = ymin + (ymax - ymin) * yratio;
+  } else {
+    x = xmin + (xmax - xmin) * xratio;
+    y = ymax - (ymax - ymin) * yratio;
+  }
 
-  var x = xmin + (xmax - xmin) * xratio;
-  var y = ymax - (ymax - ymin) * yratio;
+
+
 
   return new Point(x, y);
 }
@@ -149,6 +176,11 @@ let ymin = undefined;
 let ymax = undefined;
 // the number of iterations of the calculation to execute before giving up
 let maxIterations;
+
+// the fractal type that is currently being shown
+const MANDELBROT = 'mb';
+const BURNING_SHIP = 'bs';
+var fractalType;
 
 // the time at which calculation/rendering started
 var startTime;
@@ -303,12 +335,12 @@ function initialiseForView(xlow, xhigh, ylow, yhigh) {
   startTiming();
 }
 
-
 function firstLoadMandelbrot() {
   document.getElementById('colourend').value="#ff0000";
   document.getElementById('autoiterations').checked=true;
   document.getElementById('escape').value=4;
   document.getElementById('fractalmb').checked=true;
+  fractalType=MANDELBROT;
   initialiseForView(-2, 1, -1, 1);
   handofftoworker();
 }
@@ -319,7 +351,8 @@ function firstLoadBurningShip() {
   document.getElementById('iterations').value=64;
   document.getElementById('escape').value=4;
   document.getElementById('fractalbs').checked=true;
-  initialiseForView(-2, 1, -3, 1);
+  fractalType=BURNING_SHIP;
+  initialiseForView(-2, 2, -2, 1);
   handofftoworker();
 }
 
@@ -387,8 +420,11 @@ function updateDisplay() {
     <p id="breakdown"></p>
     <p id="rate"></p>    
     */
+  
 
-  document.getElementById('iterations').value = maxIterations;
+  var zoomLevel = 4/(xmax-xmin);
+  
+  document.getElementById('zoom').innerHTML = formatNumber(zoomLevel);
   document.getElementById('span').innerHTML = "span: " + (xmax - xmin) + " x " + (ymax - ymin);
   document.getElementById('positionxl').innerHTML = "xmin: " + xmin;
   document.getElementById('positionxh').innerHTML = "xmax: " + xmax;

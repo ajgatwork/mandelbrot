@@ -34,16 +34,16 @@ function mbCalc(p, maxIteration, escapeValue) {
 }
 
 function burningshipCalc(p, maxIteration, escapeValue) {
-    let zx = p.x;
-    let zy = p.y;
+    let zx = 0;
+    let zy = 0;
     let zx2 = 0;
     let zy2 = 0;
     let i=0;
 
     while(zx2 + zy2 <=escapeValue && i < maxIteration) {
-        let xtemp = zx2 - zy2 + p.x;
-        zy = Math.abs(2*zx*zy + p.y);
-        zx = Math.abs(xtemp);
+        let xtemp = zx2 - zy2 ;
+        zy = 2*Math.abs(zx*zy) + p.y;
+        zx = xtemp + p.x;
         zx2 = zx*zx;
         zy2 = zy*zy;
         i++;
@@ -99,6 +99,53 @@ function initPointsBySection(xlower, xhigher, ylower, yhigher, widthPoints, heig
 
     for (; ycount < yupper; j -= hinterval, ycount++) {
         for (var i = xlower, xcount = 0; xcount < widthPoints; i += winterval, xcount++) {
+            pointArray.push(new Point(i, j));
+        }
+    }
+    return pointArray;
+}
+
+/*
+ *  For Burning ship the view is traditionally flipped in both the x and y direction
+ *
+ *  xlower - min x value of the entire picture we are going to render
+ *  xhigher -  max x value of the entire picture we are going to render
+ *  ylower - min y value of the entire picture we are going to render
+ *  yhigher -  max y value of the entire picture we are going to render
+ *  widthPoints - number of pixels in each row
+ *  heightPoints - number of rows (i.e. height of picture in pixels)
+ *  split - number of horizontal sections that we have split the picture into
+ *  splitindex - the section we are calculating
+ */
+function initPointsBySectionInReverse(xlower, xhigher, ylower, yhigher, widthPoints, heightPoints, split, splitindex) {
+    let w = xhigher - xlower;
+    let h = yhigher - ylower;
+    let winterval = w / widthPoints;
+    let hinterval = h / heightPoints;
+
+    let pointArray = [];
+
+    //split is the number of sections to divide the picture into.
+    // splitindex [0..n] is the section number we are calculating
+    // only create pointArray for the section we are looking at
+    // need t figure out ycount, yhigher and where to stop
+    var sectionSize = Math.floor(heightPoints / split);
+    //log('split ',heightPoints,' into ',split,' of ',sectionSize,' with ',sectionSize*widthPoints);
+    var ycount = splitindex * sectionSize;
+    // need to take into account that sectionSize may be rounded down, so last section needs
+    // to mop up the last remaining rows
+    var yupper;
+    if (split - 1 == splitindex) {
+        // we are processing the last section
+        yupper = heightPoints;
+    } else {
+        yupper = ycount + sectionSize;
+    }
+
+    var j = ylower + ycount * hinterval;
+
+    for (; ycount < yupper; j += hinterval, ycount++) {
+        for (var i = xhigher, xcount = 0; xcount < widthPoints; i -= winterval, xcount++) {
             pointArray.push(new Point(i, j));
         }
     }
@@ -255,12 +302,17 @@ onmessage = function (e) {
     var fractal = e.data[11];
 
     var start = (new Date).getTime();
-    var pointArray = initPointsBySection(xmin, xmax, ymin, ymax, width, height, split, splitindex);
-
+ 
     // calculate the max iteration for each point, and the range
-    var fractalfunction = mbCalc;
+    var fractalfunction ;
+    var pointArray
     if (fractal == 'bs') {
+        
+        pointArray = initPointsBySectionInReverse(xmin, xmax, ymin, ymax, width, height, split, splitindex);
         fractalfunction = burningshipCalc;
+    } else {
+        fractalfunction = mbCalc;
+        pointArray = initPointsBySection(xmin, xmax, ymin, ymax, width, height, split, splitindex);
     }
     var totalIterationCount = calculate(pointArray, maxIterations, fractalfunction, escape);
     var end = (new Date).getTime();
