@@ -239,14 +239,14 @@ onmessage = function (e) {
     console.log(splitindex,' calculation done');
 
     let colEnd = RGBColour.convertString(colourEnd);
-    // TODO need to wire this in to the calculation below
+
     let hsvColEnd = rgb_to_hsv(colEnd);
 
     var arr = new Uint8ClampedArray(pointArray.length * 4);
 
     for (let i = 0, j = 0; j < pointArray.length; i += 4, j++) {
         let p = pointArray[j];
-        let colour = (maxIterations == p.iteration) ? BLACK : hsv_to_rgb((360 * p.smoothedIteration / maxIterations), 1.0, 1.0);
+        let colour = (maxIterations == p.iteration) ? BLACK : hsv_to_rgb(((360 * p.smoothedIteration / maxIterations)+hsvColEnd[0])%360, hsvColEnd[1], hsvColEnd[2]);
         arr[i] = colour.red; // red
         arr[i + 1] = colour.green;   // green
         arr[i + 2] = colour.blue; // blue
