@@ -174,7 +174,8 @@ var startTime;
 var colourEnd;
 
 // set the number of background workers to be the same as the hardware threads/cpus
-var workercount = navigator.hardwareConcurrency;
+// or if on Safari it defaults to 4
+var workercount = navigator.hardwareConcurrency || 4;
 var workers = [];
 
 var workerStatus = new Array(workercount);
