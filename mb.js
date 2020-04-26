@@ -1,32 +1,6 @@
 "use strict";
 
 
-function createColourRange(lowColour, highColour, iterationRange, maxIterations) {
-  let colourMap = new Map();
-
-  //number of colours that we need to generate
-  let colourCount = iterationRange.higher - iterationRange.lower;
-  //want to make sure that the set is always black
-  if (iterationRange.higher == maxIterations) {
-    colourCount--;
-    colourMap.set(maxIterations, BLACK);
-    colourMap.set(iterationRange.higher - 1, highColour);
-  } else {
-    colourMap.set(iterationRange.higher, highColour);
-  }
-  let redIncrement = (lowColour.red - highColour.red) / colourCount;
-  let blueIncrement = (lowColour.blue - highColour.blue) / colourCount;
-  let greenIncrement = (lowColour.green - highColour.green) / colourCount;
-
-  for (let i = 0; i < colourCount; i++) {
-    colourMap.set(iterationRange.lower + i, new RGBColour(Math.round(lowColour.red - (i * redIncrement)),
-      Math.round(lowColour.green - (i * greenIncrement)),
-      Math.round(lowColour.blue - (i * blueIncrement))
-    ));
-  }
-
-  return colourMap;
-}
 
 function createRandomColourRange(iterationRange, maxIterations) {
   let colourMap = new Map();
@@ -175,10 +149,12 @@ var colourEnd;
 
 // set the number of background workers to be the same as the hardware threads/cpus
 // or if on Safari it defaults to 4
-var workercount = navigator.hardwareConcurrency || 4;
+var workercount = navigator.hardwareConcurrency || 8;
 var workers = [];
 
 var workerStatus = new Array(workercount);
+
+var iterationTotalCount;
 
 function resetStatus() {
   for (var i = 0; i < workerStatus.length; i++)
@@ -197,14 +173,29 @@ function workerCompleteCount() {
   return c
 }
 
-for (var k = 0; k < workercount; k++) {
-  var myWorker = new Worker("worker.js");
-  myWorker.onmessage = function (e) {
-    // get data back - we get a ReturnThing
-    recordFinished(e.data.name);
-    renderImageSection(e.data.name, new Uint8ClampedArray(e.data.arr));
+/*
+ * Throw away the workers that we used last time and create some new ones.
+ * Found that on Safari the picture rendered properly every time, but on
+ * chrome that often some of the workers wouldnt return and would just
+ * spin CPU.  Creating new workers seems to fix this.
+ */
+function initialiseWorkers() {
+  while(workers.length) {
+    var worker = workers.pop();
+    worker.terminate(); // need some error condition here
+
   }
-  workers.push(myWorker);
+
+  for (var k = 0; k < workercount; k++) {
+    var myWorker = new Worker("worker.js");
+    myWorker.onmessage = function (e) {
+      // get data back - we get a ReturnThing
+      recordFinished(e.data.name);
+      iterationTotalCount+=e.data.iterationCount;
+      renderImageSection(e.data.name, new Uint8ClampedArray(e.data.arr));
+    }
+    workers.push(myWorker);
+  }
 }
 
 class ReturnThing {
@@ -292,10 +283,13 @@ function initialiseForView(xlow, xhigh, ylow, yhigh) {
   } else {
     maxIterations = iterations.value;
   }
+  //reset the total count of iterations
+  iterationTotalCount = 0;
 
   // move this here ready to reinstate the colour setting
   colourEnd = document.getElementById('colourend').value;
 
+  initialiseWorkers();
   resetStatus();
   startTiming();
 }
@@ -351,7 +345,9 @@ function handofftoworker() {
 }
 
 function formatNumber(num) {
-  return num.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,')
+  // notation and compactDisplay dont quite work in Safari yet...
+  return new Intl.NumberFormat('en-GB', { notation: "compact" , compactDisplay: "short" }).format(num);
+  //return num.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,')
 }
 
 function updateDisplay() {
@@ -380,8 +376,9 @@ function updateDisplay() {
   //calculate approximate time to render picture up to this point
   var pixelsInImage = dpr*dpr*targetHeight*targetWidth;
   var roughIdeaOfPixelsGenerated = workerCompleteCount() * pixelsInImage / workercount;
-
-  document.getElementById('rate').innerHTML = formatNumber((roughIdeaOfPixelsGenerated / ((now-startTime) / 1000)).toFixed(0)) + " pixels/second ("+workerCompleteCount()+"/"+workercount+")";
+  var pixelRate = (roughIdeaOfPixelsGenerated / ((now-startTime) / 1000)).toFixed(0);
+  var iterationRate = iterationTotalCount/((now-startTime)/1000);
+  document.getElementById('rate').innerHTML = formatNumber(pixelRate) + " pixels/second, "+formatNumber(iterationRate)+" iterations/second ("+workerCompleteCount()+"/"+workercount+")";
 }
 
 var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;

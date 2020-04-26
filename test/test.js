@@ -29,7 +29,7 @@ describe("mbCalc tests", function() {
 describe("Init points for javascript canvas", function() {
 
   it("test intervals", function() {
-    let pArray = initPoints(-1,1,-1,1,2,2);
+    let pArray = initPointsBySection(-1,1,-1,1,2,2,1,0);
 
     assert.equal(Array.isArray(pArray),true);
     assert.equal(pArray.length,4);
@@ -49,8 +49,8 @@ function tester(p,maxIterations,escape) {
 describe("Generic calculate", function() {
 
   it("test intervals", function() {
-    let pArray = initPoints(-1,1,-1,1,2,2);
-    let iterationRange = calculate(pArray,3,tester,1000);
+    let pArray = initPointsBySection(-1,1,-1,1,2,2,1,0);
+    let iterationCount = calculate(pArray,3,tester,1000);
 
     let resultsArray = [];
     let p0=new Point(-1,1);
@@ -66,11 +66,8 @@ describe("Generic calculate", function() {
     p3.iteration=0+0+3;
     resultsArray.push(p3);
 
-    let expectedIterationRange = new IterationRange(2,4);
-
-    assert.equal(expectedIterationRange.lower,iterationRange.lower);
-    assert.equal(expectedIterationRange.higher,iterationRange.higher);
-
+    var expectedIterationCount = p0.iteration+p1.iteration+p2.iteration+p3.iteration;
+    assert.equal(iterationCount,expectedIterationCount);
     assert.equal(Array.isArray(pArray),true);
     assert.equal(pArray.length,resultsArray.length);
     for(let i=0;i<resultsArray.length;i++) {
@@ -100,43 +97,6 @@ describe("Colour conversion", function() {
   });
 
 
-
-
-  it("creates colour Range, no black", function() {
-    
-    let lowColour = new RGBColour(2,2,2);
-    let highColour = new RGBColour(0,0,0);
-    let iterationRange = new IterationRange(1,3);
-
-    let colourMap = createColourRange(lowColour, highColour,iterationRange,1000);
-
-    let colourTwo = new RGBColour (1,1,1);
-
-    assert.equal(colourMap.size, 3);
-    assert.equal(coloursEqual(lowColour,colourMap.get(1)),true);
-    assert.equal(coloursEqual(colourTwo,colourMap.get(2)),true);
-    assert.equal(coloursEqual(highColour,colourMap.get(3)),true);
-
-
-  });
-
-
-  it("creates colour Range with black", function() {
-    
-    let lowColour = new RGBColour(2,2,2);
-    let highColour = new RGBColour(1,1,1);
-    let black = new RGBColour(0,0,0);
-    let iterationRange = new IterationRange(1,3);
-
-    let colourMap = createColourRange(lowColour, highColour,iterationRange,3);
-
-    assert.equal(colourMap.size, 3);
-    assert.equal(coloursEqual(lowColour,colourMap.get(1)),true);
-    assert.equal(coloursEqual(highColour,colourMap.get(2)),true);
-    assert.equal(coloursEqual(black,colourMap.get(3)),true);
-
-
-  });
 
   function arraysEqual(arr1,arr2) {
 

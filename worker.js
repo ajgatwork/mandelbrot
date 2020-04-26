@@ -33,6 +33,30 @@ function mbCalc(p, maxIteration, escapeValue) {
     return p;
 }
 
+function burningshipCalc(p, maxIteration, escapeValue) {
+    let zx = p.x;
+    let zy = p.y;
+    let zx2 = 0;
+    let zy2 = 0;
+    let i=0;
+
+    while(zx2 + zy2 <=escapeValue && i < maxIteration) {
+        let xtemp = zx2 - zy2 + p.x;
+        zy = Math.abs(2*zx*zy + p.y);
+        zx = Math.abs(xtemp);
+        zx2 = zx*zx;
+        zy2 = zy*zy;
+        i++;
+    }
+    p.iteration = i;
+    if (i < maxIteration) {
+        p.smoothedIteration = i + 1 - Math.log((Math.log(zx2 + zy2) / 2) / log2) / log2;
+    } else {
+        p.smoothedIteration = maxIteration;
+    }
+    return p;
+}
+
 /*
  *  xlower - min x value of the entire picture we are going to render
  *  xhigher -  max x value of the entire picture we are going to render
@@ -78,18 +102,19 @@ function initPointsBySection(xlower, xhigher, ylower, yhigher, widthPoints, heig
     return pointArray;
 }
 
-
+/*
+ * Perform the calculation
+ * Return the total number of iterations across the points
+ */
 function calculate(pointArray, maxIteration, f, escapeValue) {
-    let lowest = maxIteration;
-    let highest = 0;
+    let total=0;
 
     for (let i = 0; i < pointArray.length; i++) {
         pointArray[i] = f(pointArray[i], maxIteration, escapeValue);
-        if (pointArray[i].iteration < lowest) lowest = pointArray[i].iteration;
-        if (pointArray[i].iteration > highest) highest = pointArray[i].iteration;
+        total += pointArray[i].iteration;
     }
 
-    return new IterationRange(lowest, highest);
+    return total;
 }
 
 var splitindex; //which worker are we?
@@ -122,12 +147,6 @@ class Point {
   //global const for black
   const BLACK = new RGBColour(0, 0, 0);
   
-  class IterationRange {
-    constructor(lower, higher) {
-      this.lower = lower;
-      this.higher = higher;
-    }
-  }
 
   /*
 * Convert HSV to RGB.
@@ -207,10 +226,11 @@ function hsv_to_rgb(h, s, v) {
   }
 
   class ReturnThing {
-    constructor(id,start,end,arr){ 
+    constructor(id,start,end, iterationCount, arr){ 
         this.name = id;
         this.start = start;
         this.end = end;
+        this.iterationCount = iterationCount;
         this.arr = arr;
     }
 }
@@ -230,13 +250,11 @@ onmessage = function (e) {
     var colourEnd = e.data[10];
 
     var start = (new Date).getTime();
-    console.log(splitindex,' onmessage');
     var pointArray = initPointsBySection(xmin, xmax, ymin, ymax, width, height, split, splitindex);
-    console.log(splitindex,' pointArray done');
+
     // calculate the max iteration for each point, and the range
-    var iterationRange = calculate(pointArray, maxIterations, mbCalc, escape);
+    var totalIterationCount = calculate(pointArray, maxIterations, mbCalc, escape);
     var end = (new Date).getTime();
-    console.log(splitindex,' calculation done');
 
     let colEnd = RGBColour.convertString(colourEnd);
 
@@ -252,10 +270,9 @@ onmessage = function (e) {
         arr[i + 2] = colour.blue; // blue
         arr[i + 3] = colour.alpha; // alpha
     }
-    console.log(splitindex,' colouring in done');
 
     // this should pass the arr by reference as Uint8ClampedArray is transferable
-    var thing = new ReturnThing(splitindex, start, end, arr.buffer);
+    var thing = new ReturnThing(splitindex, start, end, totalIterationCount, arr.buffer);
 
     this.postMessage(thing, [arr.buffer]);
 
