@@ -46,11 +46,13 @@
 <div id="floating">
   <div id="dragger"><p>drag me!</p></div>
   <form id="userinput">
-    <p>iterations <input type="text" id="iterations" value="100" /> escape value <input type="text" id="escape"
-        value="4" /></p>
+    <p>iterations <input type="text" id="iterations" /> 
+      <input type="checkbox" id="autoiterations" name="autoiterate" checked>
+      <label for="autoiterations">Automatically set iterations</label><br>
+      escape value <input type="text" id="escape" /></p>
     <!--<p>dpr <script>window.alert(window.devicePixelRatio)</script></p>-->
     <input type="button" id="go" value="GO!" />
-
+    <input type="button" id="reset" value="Reset" />
     <p>position</p>
     <p id="span"></p>
     <p id="positionxl"></p>
@@ -65,7 +67,7 @@
     <p id="breakdown"></p>
     <p id="rate"></p> 
     <h3>change colour cycle</h3>
-    <input type="color" id="colourend" value="#ff0000">   
+    <input type="color" id="colourend">   
   </form>
 </div>
 <!--
@@ -82,7 +84,7 @@
     <canvas id="box"></canvas>
   </div>
 
-  <script src="utils.js"></script>
+  <!-- <script src="utils.js"></script> -->
   <script src="mb.js"></script>
 
 </body>

@@ -1,10 +1,6 @@
 "use strict";
 
 
-
-
-
-
 function createColourRange(lowColour, highColour, iterationRange, maxIterations) {
   let colourMap = new Map();
 
@@ -73,29 +69,12 @@ function createBandWColourRange(iterationRange, maxIterations) {
 }
 
 
-
-
-
-
-let highColour = "#000000";
-let lowColour = "#ff0000";
-
-function handleHighColourChange(event) {
-  highColour = event.target.value;
-}
-
-function handleLowColourChange(event) {
-  lowColour = event.target.value;
-}
-
 // request mousemove events
 document.getElementById("box").onmousemove = function (e) { handleMouseMove(e); };
 document.getElementById("box").onmousedown = function (e) { handleMouseDown(e); };
 document.getElementById("box").onmouseup = function (e) { handleMouseUp(e); };
 document.getElementById("go").onclick = function (e) { redraw(e); };
-//document.getElementById("highColour").onchange = function (e) { handleHighColourChange(e); };
-//document.getElementById("lowColour").onchange = function (e) { handleLowColourChange(e); };
-
+document.getElementById("reset").onclick = function (e) { firstload(); };
 
 function handleMouseMove(e) {
   // show position information on debug box 
@@ -173,22 +152,29 @@ function handleMouseUp(e) {
 
 
 //global variables
+// device pixel ratio - number of real pixels on the sreen that a web browser canvas represents
+// value greater than 1 means you are a high resolution screen
 var dpr = window.devicePixelRatio;
 
+// width and height, in browser pixels, of the image we should render
 var targetWidth = undefined;
 var targetHeight = undefined;
+// the area that we are going to plot
 let xmin = undefined;
 let xmax = undefined;
 let ymin = undefined;
 let ymax = undefined;
+// the number of iterations of the calculation to execute before giving up
 let maxIterations;
 
-var start;
-function startTiming() {
-  start = (new Date).getTime();
-}
+// the time at which calculation/rendering started
+var startTime;
 
-var workercount = 16;
+// this is the colour assigned to iteration=0 i.e. fartherst away from the mandelbrot set
+var colourEnd;
+
+// set the number of background workers to be the same as the hardware threads/cpus
+var workercount = navigator.hardwareConcurrency;
 var workers = [];
 
 var workerStatus = new Array(workercount);
@@ -209,30 +195,44 @@ function workerCompleteCount() {
   }
   return c
 }
-function allWorkersComplete() {
-  return (workerCompleteCount() == workerStatus.length);
-}
 
 for (var k = 0; k < workercount; k++) {
   var myWorker = new Worker("worker.js");
   myWorker.onmessage = function (e) {
     // get data back - we get a ReturnThing
     recordFinished(e.data.name);
-    paint(e.data.name, new Uint8ClampedArray(e.data.arr));
+    renderImageSection(e.data.name, new Uint8ClampedArray(e.data.arr));
   }
   workers.push(myWorker);
 }
 
+class ReturnThing {
+  constructor(id,start,end,arr){ 
+      this.name = id;
+      this.start = start;
+      this.end = end;
+      this.arr = arr;
+  }
+}
 
-// given the view the user wants to see, and the size of the
-// window, calculate what we are actually going to show!
-//
-// sets up the global variables
-// xmin
-// xmax
-// ymin
-// ymax
-function calculateView(xlow, xhigh, ylow, yhigh) {
+class Point {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.iteration = undefined;
+    this.smoothedIteration = undefined;
+  }
+}
+
+function startTiming() {
+  startTime = (new Date).getTime();
+}
+
+/*
+ * Zoom in to a box with the current dimensions, initialise all global variables
+ * ready for calculation.
+ */
+function initialiseForView(xlow, xhigh, ylow, yhigh) {
 
   //figure out ratio of the window
   targetWidth = window.innerWidth;
@@ -279,11 +279,21 @@ function calculateView(xlow, xhigh, ylow, yhigh) {
   box.style.height = canvas.style.height;
   boxCtx.scale(dpr, dpr);
 
-  // guess the number of iterations that will give the best picture
-  // 130 * (x-span)^-0.3263
-  // this has problems with infinity, so need to find a reasonable limit
-  maxIterations = Math.round(130 * Math.pow(xmax - xmin, -0.3263));
-  if (maxIterations > 50000) maxIterations = 50000;
+  var checkbox = document.getElementById('autoiterations');
+  var iterations = document.getElementById('iterations');
+
+  if (checkbox.checked) {
+    // guess the number of iterations that will give the best picture
+    // 130 * (x-span)^-0.3263
+    // this has problems with infinity, so need to find a reasonable limit
+    maxIterations = Math.round(130 * Math.pow(xmax - xmin, -0.3263));
+    if (maxIterations > 50000) maxIterations = 50000;
+  } else {
+    maxIterations = iterations.value;
+  }
+
+  // move this here ready to reinstate the colour setting
+  colourEnd = document.getElementById('colourend').value;
 
   resetStatus();
   startTiming();
@@ -291,39 +301,37 @@ function calculateView(xlow, xhigh, ylow, yhigh) {
 
 
 function firstload() {
-  calculateView(-2, 1, -1, 1);
+  document.getElementById('colourend').value="#ff0000";
+  document.getElementById('autoiterations').checked=true;
+  document.getElementById('escape').value=4;
+  initialiseForView(-2, 1, -1, 1);
   handofftoworker();
 
 }
 
 function redraw(e) {
-  calculateView(xmin, xmax, ymin, ymax);
+  initialiseForView(xmin, xmax, ymin, ymax);
   handofftoworker();
 }
 
 function drawNewView(xl, xh, yl, yh) {
-  calculateView(xl, xh, yl, yh);
+  initialiseForView(xl, xh, yl, yh);
   handofftoworker();
 }
-
-
 
 function handofftoworker() {
   let escape = Number(document.getElementById('escape').value);
   const canvas = document.getElementById('myCanvas');
   for (var p = 0; p < workers.length; p++) {
-    // e.data contains xmin, xmax, ymin, ymax, canvas.width, canvas.height, escape, maxIterations
-    var input = [xmin, xmax, ymin, ymax, canvas.width, canvas.height, escape, maxIterations, workers.length, p];
+    // e.data contains xmin, xmax, ymin, ymax, canvas.width, canvas.height, escape, maxIterations, split, splitindex, colourEnd
+    var input = [xmin, xmax, ymin, ymax, canvas.width, canvas.height, escape, maxIterations, workers.length, p, colourEnd];
     workers[p].postMessage(input);
   }
 
 }
 
- function paint(section, array) {
+ function renderImageSection(section, array) {
 
-  const colourEnd = document.getElementById('colourend').value;
-  let colEnd = RGBColour.convertString(colourEnd);
-  let hsvColEnd = rgb_to_hsv(colEnd);
 
   const canvas = document.getElementById('myCanvas');
   const ctx = canvas.getContext('2d');
@@ -372,7 +380,7 @@ function updateDisplay() {
   var pixelsInImage = dpr*dpr*targetHeight*targetWidth;
   var roughIdeaOfPixelsGenerated = workerCompleteCount() * pixelsInImage / workercount;
 
-  document.getElementById('rate').innerHTML = formatNumber((roughIdeaOfPixelsGenerated / ((now-start) / 1000)).toFixed(0)) + " pixels/second ("+workerCompleteCount()+"/"+workercount+")";
+  document.getElementById('rate').innerHTML = formatNumber((roughIdeaOfPixelsGenerated / ((now-startTime) / 1000)).toFixed(0)) + " pixels/second ("+workerCompleteCount()+"/"+workercount+")";
 }
 
 var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;

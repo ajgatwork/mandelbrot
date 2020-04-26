@@ -1,6 +1,5 @@
 "use strict";
 
-importScripts('utils.js');
 
 const log2 = Math.log(2);
 
@@ -95,9 +94,129 @@ function calculate(pointArray, maxIteration, f, escapeValue) {
 
 var splitindex; //which worker are we?
 
+class Point {
+    constructor(x, y) {
+      this.x = x;
+      this.y = y;
+      this.iteration = undefined;
+      this.smoothedIteration = undefined;
+    }
+  }
+  
+  class RGBColour {
+    constructor(red, green, blue) {
+      this.red = red;
+      this.green = green;
+      this.blue = blue;
+      this.alpha = 255;
+    }
+  
+    static convertString(string) {
+      // string in format #rrggbb
+      return new RGBColour(parseInt(string.substring(1, 3), 16),
+        parseInt(string.substring(3, 5), 16),
+        parseInt(string.substring(5), 16));
+    }
+  }
+  
+  //global const for black
+  const BLACK = new RGBColour(0, 0, 0);
+  
+  class IterationRange {
+    constructor(lower, higher) {
+      this.lower = lower;
+      this.higher = higher;
+    }
+  }
+
+  /*
+* Convert HSV to RGB.
+* as per https://en.wikipedia.org/wiki/HSL_and_HSV#HSV_to_RGB
+*
+* Input ranges:
+*   H =   [0, 360] (integer degrees)
+*   S = [0.0, 1.0] (float)
+*   V = [0.0, 1.0] (float)
+*/
+function hsv_to_rgb(h, s, v) {
+    if (v > 1.0) v = 1.0;
+    var hp = h / 60.0;
+    var c = v * s;
+    var x = c * (1 - Math.abs((hp % 2) - 1));
+    var rgb = undefined;
+  
+    if (0 <= hp && hp <= 1) rgb = [c, x, 0];
+    if (1 < hp && hp <= 2) rgb = [x, c, 0];
+    if (2 < hp && hp <= 3) rgb = [0, c, x];
+    if (3 < hp && hp <= 4) rgb = [0, x, c];
+    if (4 < hp && hp <= 5) rgb = [x, 0, c];
+    if (5 < hp && hp <= 6) rgb = [c, 0, x];
+  
+    var m = v - c;
+    rgb[0] += m;
+    rgb[1] += m;
+    rgb[2] += m;
+  
+    rgb[0] *= 255;
+    rgb[1] *= 255;
+    rgb[2] *= 255;
+    return new RGBColour(rgb[0], rgb[1], rgb[2]);
+  }
+  
+  function rgb_to_hsv(rgbcolour) {
+  
+    var rgb = [rgbcolour.red,rgbcolour.green,rgbcolour.blue];
+    rgb[0] /= 255;
+    rgb[1] /= 255;
+    rgb[2] /= 255;
+    var xmax,xmin;
+    var c,v,l,h,s;
+  
+    if (rgb[0] < rgb[1]) {
+      xmin = rgb[0];
+      xmax = rgb[1];
+    } else {
+      xmin = rgb[1];
+      xmax = rgb[0];
+    }
+    if (xmin > rgb[2]) {
+      xmin = rgb[2];
+    }
+    if (xmax < rgb[2]) {
+      xmax = rgb[2];
+    }
+  
+    v=xmax;
+    c = xmax-xmin;
+  
+    if (c==0) {
+      h = 0;
+    } else {
+      if (v==rgb[0]) h = 60 * ((rgb[1]-rgb[2])/c);
+      if (v==rgb[1]) h = 60 * (2 + (rgb[2]-rgb[0])/c);
+      if (v==rgb[2]) h = 60 * (4 + (rgb[0]-rgb[1])/c);
+    }
+  
+    if (v==0) {
+      s = 0
+    } else {
+      s = c/v;
+    }
+  
+    return [h,s,v];
+  }
+
+  class ReturnThing {
+    constructor(id,start,end,arr){ 
+        this.name = id;
+        this.start = start;
+        this.end = end;
+        this.arr = arr;
+    }
+}
 
 onmessage = function (e) {
-    // e.data contains xmin, xmax, ymin, ymax, canvas.width, canvas.height, escape, maxIterations, split, splitindex
+    // e.data contains xmin, xmax, ymin, ymax, canvas.width, canvas.height, escape, maxIterations, split, splitindex, colourEnd
     var xmin = e.data[0];
     var xmax = e.data[1];
     var ymin = e.data[2];
@@ -108,14 +227,20 @@ onmessage = function (e) {
     var maxIterations = e.data[7];
     var split = e.data[8];
     splitindex = e.data[9];
+    var colourEnd = e.data[10];
 
     var start = (new Date).getTime();
+    console.log(splitindex,' onmessage');
     var pointArray = initPointsBySection(xmin, xmax, ymin, ymax, width, height, split, splitindex);
-
+    console.log(splitindex,' pointArray done');
     // calculate the max iteration for each point, and the range
     var iterationRange = calculate(pointArray, maxIterations, mbCalc, escape);
     var end = (new Date).getTime();
+    console.log(splitindex,' calculation done');
 
+    let colEnd = RGBColour.convertString(colourEnd);
+    // TODO need to wire this in to the calculation below
+    let hsvColEnd = rgb_to_hsv(colEnd);
 
     var arr = new Uint8ClampedArray(pointArray.length * 4);
 
@@ -127,6 +252,7 @@ onmessage = function (e) {
         arr[i + 2] = colour.blue; // blue
         arr[i + 3] = colour.alpha; // alpha
     }
+    console.log(splitindex,' colouring in done');
 
     // this should pass the arr by reference as Uint8ClampedArray is transferable
     var thing = new ReturnThing(splitindex, start, end, arr.buffer);
