@@ -13,7 +13,7 @@
     font-size: 10pt;
     }
 
-  canvas {
+  #myCanvas {
     width:100%;
     height:100%;
     left: 0px;
@@ -21,6 +21,10 @@
   }
 
   #box {
+    width:100%;
+    height:100%;
+    left: 0px;
+    top: 0px;
     position: absolute;
     z-index: 5;
   }
@@ -65,13 +69,17 @@
     <p id="positionyl"></p>
     <p id="positionyh"></p>
     <p id="position"></p>
-    <p>Iterations</p>
     <p id="zoom"></p>
-    <p>Timings</p>
     <p id="breakdown"></p>
     <p id="rate"></p> 
-    <h3>change colour cycle</h3>
-    <input type="color" id="colourend">   
+    <h3>Colour choices</h3>
+    <input type="radio" id="colourRange" name="colourPicker" value="range">
+    <label for="colourchoice1">End colour</label>
+    <input type="color" id="colourend"> 
+    <p></p>
+    <input type="radio" id="cosineRange" name="colourPicker" value="cosine">
+    <label for="colourchoice2">Cosine</label>
+  
   </form>
 </div>
 <!--

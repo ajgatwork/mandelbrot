@@ -123,6 +123,14 @@ function getPointForPosition(xscreen, yscreen) {
   return new Point(x, y);
 }
 
+//rgb 0 < x < 1
+class CosineInput {
+  constructor(red, green, blue) {
+    this.red = red;
+    this.green = green;
+    this.blue = blue;
+  }
+}
 
 var mousexStart = 0;
 var mouseyStart = 0;
@@ -185,6 +193,15 @@ var fractalType;
 // the time at which calculation/rendering started
 var startTime;
 
+// this is the type of colouring to do - either 'cosine' or 'range'
+var colourChoice;
+// a-d are the inputs to the cosine colouring
+var  a = new CosineInput(0.5,0.5,0.5);
+var  b = a;
+var  c = new CosineInput(1,1,1);
+var  d = new CosineInput(0,0.1,0.2);
+
+// colourEnd is the input to the range colouring
 // this is the colour assigned to iteration=0 i.e. fartherst away from the mandelbrot set
 var colourEnd;
 
@@ -324,8 +341,11 @@ function initialiseForView(xlow, xhigh, ylow, yhigh) {
   } else {
     maxIterations = iterations.value;
   }
+  document.getElementById('iterations').value=maxIterations;
   //reset the total count of iterations
   iterationTotalCount = 0;
+
+  colourChoice = (document.getElementById('colourRange').checked) ? 'range':'cosine';
 
   // move this here ready to reinstate the colour setting
   colourEnd = document.getElementById('colourend').value;
@@ -340,6 +360,7 @@ function firstLoadMandelbrot() {
   document.getElementById('autoiterations').checked=true;
   document.getElementById('escape').value=4;
   document.getElementById('fractalmb').checked=true;
+  document.getElementById('colourRange').checked=true;
   fractalType=MANDELBROT;
   initialiseForView(-2, 1, -1, 1);
   handofftoworker();
@@ -351,6 +372,7 @@ function firstLoadBurningShip() {
   document.getElementById('iterations').value=64;
   document.getElementById('escape').value=4;
   document.getElementById('fractalbs').checked=true;
+  document.getElementById('colourRange').checked=true;
   fractalType=BURNING_SHIP;
   initialiseForView(-2, 2, -2, 1);
   handofftoworker();
@@ -366,6 +388,8 @@ function drawNewView(xl, xh, yl, yh) {
   handofftoworker();
 }
 
+
+
 function handofftoworker() {
   let escape = Number(document.getElementById('escape').value);
   const canvas = document.getElementById('myCanvas');
@@ -374,8 +398,8 @@ function handofftoworker() {
     fractal='bs';
   }
   for (var p = 0; p < workers.length; p++) {
-    // e.data contains xmin, xmax, ymin, ymax, canvas.width, canvas.height, escape, maxIterations, split, splitindex, colourEnd, fractal
-    var input = [xmin, xmax, ymin, ymax, canvas.width, canvas.height, escape, maxIterations, workers.length, p, colourEnd, fractal];
+    // e.data contains xmin, xmax, ymin, ymax, canvas.width, canvas.height, escape, maxIterations, split, splitindex, colourEnd, fractal, colourChoice, a, b, c, d
+    var input = [xmin, xmax, ymin, ymax, canvas.width, canvas.height, escape, maxIterations, workers.length, p, colourEnd, fractal, colourChoice, a, b, c, d];
     workers[p].postMessage(input);
   }
 
@@ -416,7 +440,6 @@ function updateDisplay() {
     <p>Iterations</p>
     <p id="iterationMin"></p>
     <p id="iterationMax"></p>
-    <p>Timings</p>
     <p id="breakdown"></p>
     <p id="rate"></p>    
     */
@@ -424,7 +447,7 @@ function updateDisplay() {
 
   var zoomLevel = 4/(xmax-xmin);
   
-  document.getElementById('zoom').innerHTML = formatNumber(zoomLevel);
+  document.getElementById('zoom').innerHTML = "Zoom: "+formatNumber(zoomLevel);
   document.getElementById('span').innerHTML = "span: " + (xmax - xmin) + " x " + (ymax - ymin);
   document.getElementById('positionxl').innerHTML = "xmin: " + xmin;
   document.getElementById('positionxh').innerHTML = "xmax: " + xmax;
@@ -437,7 +460,10 @@ function updateDisplay() {
   var roughIdeaOfPixelsGenerated = workerCompleteCount() * pixelsInImage / workercount;
   var pixelRate = (roughIdeaOfPixelsGenerated / ((now-startTime) / 1000)).toFixed(0);
   var iterationRate = iterationTotalCount/((now-startTime)/1000);
-  document.getElementById('rate').innerHTML = formatNumber(pixelRate) + " pixels/second, "+formatNumber(iterationRate)+" iterations/second ("+workerCompleteCount()+"/"+workercount+")";
+  document.getElementById('rate').innerHTML = "Timings: " + formatNumber(pixelRate) + " pixels/second, "+formatNumber(iterationRate)+" iterations/second ("+workerCompleteCount()+"/"+workercount+")";
+  if (workerCompleteCount() == workercount) {
+    document.getElementById('breakdown').innerHTML = "Rendering time: " + (now-startTime)/1000 + "s";
+  }
 }
 
 var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
@@ -496,3 +522,16 @@ window.onload = firstLoadBurningShip;
  *
  *   Line fit to this data: iterations = 130 * (x-span)^-0.3263
  */
+
+ /*
+  * 
+  * Rendering time for old method (where colouring is in the web worker)
+  *     Zoom     Time
+  *        1     0.52s
+  *       49     0.835s
+  *      865     1.178s
+  *    15000     1.675s
+  *   482000     2.954s
+  *      27M     8.299s
+  *     732M    17.17s
+  */
