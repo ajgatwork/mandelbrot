@@ -345,9 +345,8 @@ function initialiseForView(xlow, xhigh, ylow, yhigh) {
   //reset the total count of iterations
   iterationTotalCount = 0;
 
+  // find the colour selection and inputs
   colourChoice = (document.getElementById('colourRange').checked) ? 'range':'cosine';
-
-  // move this here ready to reinstate the colour setting
   colourEnd = document.getElementById('colourend').value;
 
   initialiseWorkers();
