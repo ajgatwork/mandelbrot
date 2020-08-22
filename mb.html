@@ -31,7 +31,9 @@
 
   #colourSpectrum {
     width:100px;
-    height:20px;
+    height:40px;
+    border-width:1;
+    border-color:black;
   }
   
   #floating {
@@ -81,10 +83,11 @@
     <input type="radio" id="colourRange" name="colourPicker" value="range">
     <label for="colourchoice1">End colour</label>
     <input type="color" id="colourend"> 
+    <canvas id="colourSpectrum"></canvas>
     <p></p>
     <input type="radio" id="cosineRange" name="colourPicker" value="cosine">
     <label for="colourchoice2">Cosine</label>
-    <canvas id="colourSpectrum"></canvas>
+
   
   </form>
 </div>
