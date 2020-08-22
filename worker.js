@@ -325,7 +325,8 @@ onmessage = function (e) {
 
     for (let i = 0, j = 0; j < pointArray.length; i += 4, j++) {
         let p = pointArray[j];
-        let colour = (maxIterations == p.iteration) ? BLACK : hsv_to_rgb(((360 * p.smoothedIteration / maxIterations)+hsvColEnd[0])%360, hsvColEnd[1], hsvColEnd[2]);
+        //let colour = (maxIterations == p.iteration) ? BLACK : hsv_to_rgb(((360 * p.smoothedIteration / maxIterations)+hsvColEnd[0])%360, hsvColEnd[1], hsvColEnd[2]);
+        let colour = (maxIterations == p.iteration) ? BLACK : policeColours(p.smoothedIteration / maxIterations);
         arr[i] = colour.red; // red
         arr[i + 1] = colour.green;   // green
         arr[i + 2] = colour.blue; // blue
@@ -337,4 +338,18 @@ onmessage = function (e) {
 
     this.postMessage(thing, [arr.buffer]);
 
+}
+
+// 
+function policeColours(t) {
+  var  a = new RGBColour(0.5,0.5,0.5);
+  var  b = a;
+  var  c = new RGBColour(1,1,1);
+  var  d = new RGBColour(0,0.1,0.2);
+
+  return new RGBColour(
+    255*(a.red + b.red*Math.cos(6.28318*c.red*t + d.red)),
+    255*(a.green + b.green*Math.cos(6.28318*c.green*t + d.green)),
+    255*(a.blue + b.blue*Math.cos(6.28318*c.blue*t + d.blue))
+  );
 }
