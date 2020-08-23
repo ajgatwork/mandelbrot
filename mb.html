@@ -35,6 +35,13 @@
     border-width:1;
     border-color:black;
   }
+
+  #fancyColourSpectrum {
+    width:100px;
+    height:40px;
+    border-width:1;
+    border-color:black;
+  }
   
   #floating {
     position: absolute;
@@ -87,6 +94,17 @@
     <p></p>
     <input type="radio" id="cosineRange" name="colourPicker" value="cosine">
     <label for="colourchoice2">Cosine</label>
+    <label for="fancyColour">Choose a preset:</label>
+    <select id="fancyColour" name="fancyColour">
+      <option value="fc1">rainbow</option>
+      <option value="fc2" selected>ice</option>
+      <option value="fc3">dark</option>
+      <option value="fc4">sun</option>
+      <option value="fc5">purple</option>
+      <option value="fc6">pink</option>
+      <option value="fc7">pastel</option>
+    </select>
+    <canvas id="fancyColourSpectrum"></canvas>
 
   
   </form>
@@ -105,7 +123,9 @@
     <canvas id="box"></canvas>
   </div>
 
-  <!-- <script src="utils.js"></script> -->
+  <!-- This feels messy - import the worker.js file which is really the webworker code
+       but we need lots of the helper functions from it to render the spectrum -->
+  <script src="worker.js"></script>
   <script src="mb.js"></script>
 
 </body>

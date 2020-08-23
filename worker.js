@@ -301,10 +301,11 @@ onmessage = function (e) {
     var colourEnd = e.data[10];
     var fractal = e.data[11];
     var colourChoice = e.data[12];
-    var a = e.data[13];
-    var b = e.data[14];
-    var c = e.data[15];
-    var d = e.data[16];
+    var cosineColour = e.data[13];
+    //var a = e.data[13];
+    //var b = e.data[14];
+    //var c = e.data[15];
+    //var d = e.data[16];
     
 
     var start = (new Date).getTime();
@@ -330,7 +331,7 @@ onmessage = function (e) {
     switch (colourChoice) {
       case 'range': colourScheme = t => rangeColours(hsvColEnd,t);
         break;
-      case 'cosine': colourScheme = t => cosineColours(a,b,c,d,t);
+      case 'cosine': colourScheme = t => cosineColours(cosineColour,t);
         break;
     }
 
@@ -360,24 +361,10 @@ function rangeColours(hsvColEnd,t) {
   return hsv_to_rgb(((360 * t)+hsvColEnd[0])%360, hsvColEnd[1], hsvColEnd[2]);
 }
 
-function cosineColours(a,b,c,d,t) {
+function cosineColours(col,t) {
   return new RGBColour(
-    Math.round(255*(a.red + b.red*Math.cos(6.28318*c.red*t + d.red))),
-    Math.round(255*(a.green + b.green*Math.cos(6.28318*c.green*t + d.green))),
-    Math.round(255*(a.blue + b.blue*Math.cos(6.28318*c.blue*t + d.blue)))
+    Math.round(255*(col.a.red + col.b.red*Math.cos(6.28318*(col.c.red*t + col.d.red)))),
+    Math.round(255*(col.a.green + col.b.green*Math.cos(6.28318*(col.c.green*t + col.d.green)))),
+    Math.round(255*(col.a.blue + col.b.blue*Math.cos(6.28318*(col.c.blue*t + col.d.blue))))
   );
 }
-/*
-function cosineColours(t) {
-  var  a = new RGBColour(0.5,0.5,0.5);
-  var  b = a;
-  var  c = new RGBColour(1,1,1);
-  var  d = new RGBColour(0,0.1,0.2);
-
-  return new RGBColour(
-    Math.round(255*(a.red + b.red*Math.cos(6.28318*c.red*t + d.red))),
-    Math.round(255*(a.green + b.green*Math.cos(6.28318*c.green*t + d.green))),
-    Math.round(255*(a.blue + b.blue*Math.cos(6.28318*c.blue*t + d.blue)))
-  );
-}
-*/

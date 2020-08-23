@@ -1,21 +1,5 @@
 "use strict";
 
-class RGBColour {
-  constructor(red, green, blue) {
-    this.red = red;
-    this.green = green;
-    this.blue = blue;
-    this.alpha = 255;
-  }
-
-  static convertString(string) {
-    // string in format #rrggbb
-    return new RGBColour(parseInt(string.substring(1, 3), 16),
-      parseInt(string.substring(3, 5), 16),
-      parseInt(string.substring(5), 16));
-  }
-}
-
 function createRandomColourRange(iterationRange, maxIterations) {
   let colourMap = new Map();
 
@@ -130,10 +114,6 @@ function getPointForPosition(xscreen, yscreen) {
     x = xmin + (xmax - xmin) * xratio;
     y = ymax - (ymax - ymin) * yratio;
   }
-
-
-
-
   return new Point(x, y);
 }
 
@@ -145,6 +125,24 @@ class CosineInput {
     this.blue = blue;
   }
 }
+
+class FancyColour {
+  constructor (a, b, c, d) {
+    this.a = a;
+    this.b = b;
+    this.c = c;
+    this.d = d;
+  }
+}
+
+var fancyColour1 = new FancyColour(new CosineInput(0.5,0.5,0.5), new CosineInput(0.5,0.5,0.5), new CosineInput(1,1,1), new CosineInput(0,0.33,0.67));
+var fancyColour2 = new FancyColour(new CosineInput(0.5,0.5,0.5), new CosineInput(0.5,0.5,0.5), new CosineInput(1,1,1), new CosineInput(0,0.1,0.2));
+var fancyColour3 = new FancyColour(new CosineInput(0.5,0.5,0.5), new CosineInput(0.5,0.5,0.5), new CosineInput(1,1,1), new CosineInput(0.3,0.2,0.2));
+var fancyColour4 = new FancyColour(new CosineInput(0.5,0.5,0.5), new CosineInput(0.5,0.5,0.5), new CosineInput(1,1,1), new CosineInput(0.8,0.9,0.3));
+var fancyColour5 = new FancyColour(new CosineInput(0.5,0.5,0.5), new CosineInput(0.5,0.5,0.5), new CosineInput(1,0.7,0.4), new CosineInput(0,0.15,0.2));
+var fancyColour6 = new FancyColour(new CosineInput(0.5,0.5,0.5), new CosineInput(0.5,0.5,0.5), new CosineInput(2,1,1), new CosineInput(0.5,0.2,0.25));
+var fancyColour7 = new FancyColour(new CosineInput(0.8,0.5,0.4), new CosineInput(0.2,0.4,0.2), new CosineInput(2,1,1), new CosineInput(0,0.25,0.25));
+
 
 var mousexStart = 0;
 var mouseyStart = 0;
@@ -181,6 +179,9 @@ function handleMouseUp(e) {
   drawNewView(xl, xh, yl, yh);
 }
 
+// handle change of end colour and update spectrum
+document.getElementById("colourend").onchange = function (e) { fillInEndColourSpectrum(); };
+document.getElementById("fancyColour").onchange = function(e) { fillInCosineColourSpectrum() };
 
 
 //global variables
@@ -209,11 +210,7 @@ var startTime;
 
 // this is the type of colouring to do - either 'cosine' or 'range'
 var colourChoice;
-// a-d are the inputs to the cosine colouring
-var  a = new CosineInput(0.5,0.5,0.5);
-var  b = a;
-var  c = new CosineInput(1,1,1);
-var  d = new CosineInput(0,0.1,0.2);
+var fancyColourChoice = fancyColour2;
 
 // colourEnd is the input to the range colouring
 // this is the colour assigned to iteration=0 i.e. fartherst away from the mandelbrot set
@@ -267,24 +264,6 @@ function initialiseWorkers() {
       renderImageSection(e.data.name, new Uint8ClampedArray(e.data.arr));
     }
     workers.push(myWorker);
-  }
-}
-
-class ReturnThing {
-  constructor(id,start,end,arr){ 
-      this.name = id;
-      this.start = start;
-      this.end = end;
-      this.arr = arr;
-  }
-}
-
-class Point {
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
-    this.iteration = undefined;
-    this.smoothedIteration = undefined;
   }
 }
 
@@ -368,87 +347,26 @@ function initialiseForView(xlow, xhigh, ylow, yhigh) {
   startTiming();
 }
 
- /*
-* Convert HSV to RGB.
-* as per https://en.wikipedia.org/wiki/HSL_and_HSV#HSV_to_RGB
-*
-* Input ranges:
-*   H =   [0, 360] (integer degrees)
-*   S = [0.0, 1.0] (float)
-*   V = [0.0, 1.0] (float)
-*/
-function hsv_to_rgb(h, s, v) {
-  if (h<0) h=0;
-  if (v > 1.0) v = 1.0;
-  var hp = h / 60.0;
-  var c = v * s;
-  var x = c * (1 - Math.abs((hp % 2) - 1));
-  var rgb = undefined;
-
-  if (0 <= hp && hp <= 1) rgb = [c, x, 0];
-  if (1 < hp && hp <= 2) rgb = [x, c, 0];
-  if (2 < hp && hp <= 3) rgb = [0, c, x];
-  if (3 < hp && hp <= 4) rgb = [0, x, c];
-  if (4 < hp && hp <= 5) rgb = [x, 0, c];
-  if (5 < hp && hp <= 6) rgb = [c, 0, x];
-
-  var m = v - c;
-  rgb[0] += m;
-  rgb[1] += m;
-  rgb[2] += m;
-
-  rgb[0] *= 255;
-  rgb[1] *= 255;
-  rgb[2] *= 255;
-  return new RGBColour(rgb[0], rgb[1], rgb[2]);
-}
-
-function rgb_to_hsv(rgbcolour) {
-  
-  var rgb = [rgbcolour.red,rgbcolour.green,rgbcolour.blue];
-  rgb[0] /= 255;
-  rgb[1] /= 255;
-  rgb[2] /= 255;
-  var xmax,xmin;
-  var c,v,l,h,s;
-
-  if (rgb[0] < rgb[1]) {
-    xmin = rgb[0];
-    xmax = rgb[1];
-  } else {
-    xmin = rgb[1];
-    xmax = rgb[0];
+function fillInCosineColourSpectrum() {
+  var listChoice = document.getElementById('fancyColour').value;
+  switch (listChoice) {
+    case 'fc1':fancyColourChoice = fancyColour1;
+      break;
+    case 'fc2':fancyColourChoice = fancyColour2;
+    break;  
+    case 'fc3':fancyColourChoice = fancyColour3;
+    break;    
+    case 'fc4':fancyColourChoice = fancyColour4;
+    break;
+    case 'fc5':fancyColourChoice = fancyColour5;
+    break;
+    case 'fc6':fancyColourChoice = fancyColour6;
+    break;
+    case 'fc7':fancyColourChoice = fancyColour7;
+    break;
   }
-  if (xmin > rgb[2]) {
-    xmin = rgb[2];
-  }
-  if (xmax < rgb[2]) {
-    xmax = rgb[2];
-  }
-
-  v=xmax;
-  c = xmax-xmin;
-
-  if (c==0) {
-    h = 0;
-  } else {
-    if (v==rgb[0]) h = 60 * ((rgb[1]-rgb[2])/c);
-    if (v==rgb[1]) h = 60 * (2 + (rgb[2]-rgb[0])/c);
-    if (v==rgb[2]) h = 60 * (4 + (rgb[0]-rgb[1])/c);
-  }
-
-  if (v==0) {
-    s = 0
-  } else {
-    s = c/v;
-  }
-
-  return [h,s,v];
-}
-
-// 0 < t < 1
-function rangeColours(hsvColEnd,t) {
-  return hsv_to_rgb(((360 * t)+hsvColEnd[0])%360, hsvColEnd[1], hsvColEnd[2]);
+  var specfunc = t =>cosineColours(fancyColourChoice,t);
+  renderSpectrum('fancyColourSpectrum', specfunc);
 }
 
 function fillInEndColourSpectrum() {
@@ -462,7 +380,7 @@ function renderSpectrum(canvasName,func) {
   const canvas = document.getElementById(canvasName);
   const ctx = canvas.getContext('2d');
   const mySecondImageData = ctx.createImageData(canvas.width, canvas.height);
-  c
+  
   var rowArray = [];
   //create a row 
  for (let i = 0; i < canvas.width; i++) {
@@ -491,6 +409,7 @@ function firstLoadMandelbrot() {
   document.getElementById('fractalmb').checked=true;
   document.getElementById('colourRange').checked=true;
   fillInEndColourSpectrum();
+  fillInCosineColourSpectrum();
   fractalType=MANDELBROT;
   initialiseForView(-2, 1, -1, 1);
   handofftoworker();
@@ -503,6 +422,8 @@ function firstLoadBurningShip() {
   document.getElementById('escape').value=4;
   document.getElementById('fractalbs').checked=true;
   document.getElementById('colourRange').checked=true;
+  fillInEndColourSpectrum();
+  fillInCosineColourSpectrum();
   fractalType=BURNING_SHIP;
   initialiseForView(-2, 2, -2, 1);
   handofftoworker();
@@ -529,7 +450,7 @@ function handofftoworker() {
   }
   for (var p = 0; p < workers.length; p++) {
     // e.data contains xmin, xmax, ymin, ymax, canvas.width, canvas.height, escape, maxIterations, split, splitindex, colourEnd, fractal, colourChoice, a, b, c, d
-    var input = [xmin, xmax, ymin, ymax, canvas.width, canvas.height, escape, maxIterations, workers.length, p, colourEnd, fractal, colourChoice, a, b, c, d];
+    var input = [xmin, xmax, ymin, ymax, canvas.width, canvas.height, escape, maxIterations, workers.length, p, colourEnd, fractal, colourChoice, fancyColourChoice];
     workers[p].postMessage(input);
   }
 
