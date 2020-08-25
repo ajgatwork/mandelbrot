@@ -180,8 +180,21 @@ function handleMouseUp(e) {
 }
 
 // handle change of end colour and update spectrum
-document.getElementById("colourend").onchange = function (e) { fillInEndColourSpectrum(); };
-document.getElementById("fancyColour").onchange = function(e) { fillInCosineColourSpectrum() };
+document.getElementById("colourend").onchange = fillInEndColourSpectrum;
+document.getElementById("fancyColour").onchange =  populateCosineCalculationFigures;
+
+document.getElementById("a-red").onchange = fillInCosineColourSpectrum;
+document.getElementById("a-green").onchange = fillInCosineColourSpectrum;
+document.getElementById("a-blue").onchange = fillInCosineColourSpectrum;
+document.getElementById("b-red").onchange = fillInCosineColourSpectrum;
+document.getElementById("b-green").onchange = fillInCosineColourSpectrum;
+document.getElementById("b-blue").onchange = fillInCosineColourSpectrum;
+document.getElementById("c-red").onchange =  fillInCosineColourSpectrum;
+document.getElementById("c-green").onchange =  fillInCosineColourSpectrum;
+document.getElementById("c-blue").onchange =  fillInCosineColourSpectrum;
+document.getElementById("d-red").onchange =  fillInCosineColourSpectrum;
+document.getElementById("d-green").onchange = fillInCosineColourSpectrum;
+document.getElementById("d-blue").onchange = fillInCosineColourSpectrum;
 
 
 //global variables
@@ -347,24 +360,67 @@ function initialiseForView(xlow, xhigh, ylow, yhigh) {
   startTiming();
 }
 
-function fillInCosineColourSpectrum() {
+function populateCosineCalculationFigures() {
   var listChoice = document.getElementById('fancyColour').value;
   switch (listChoice) {
-    case 'fc1':fancyColourChoice = fancyColour1;
+    case 'fc1':
+      populateFigures(fancyColour1);
       break;
-    case 'fc2':fancyColourChoice = fancyColour2;
+    case 'fc2':      populateFigures(fancyColour2);
     break;  
-    case 'fc3':fancyColourChoice = fancyColour3;
+    case 'fc3':      populateFigures(fancyColour3);
     break;    
-    case 'fc4':fancyColourChoice = fancyColour4;
+    case 'fc4':      populateFigures(fancyColour4);
     break;
-    case 'fc5':fancyColourChoice = fancyColour5;
+    case 'fc5':      populateFigures(fancyColour5);
     break;
-    case 'fc6':fancyColourChoice = fancyColour6;
+    case 'fc6':      populateFigures(fancyColour6);
     break;
-    case 'fc7':fancyColourChoice = fancyColour7;
+    case 'fc7':      populateFigures(fancyColour7);
     break;
   }
+  fillInCosineColourSpectrum();
+}
+
+function populateFigures(fancyColourChoice) {
+  document.getElementById("a-red").value = fancyColourChoice.a.red;
+  document.getElementById("a-green").value = fancyColourChoice.a.green;
+  document.getElementById("a-blue").value = fancyColourChoice.a.blue;
+  document.getElementById("b-red").value = fancyColourChoice.b.red;
+  document.getElementById("b-green").value = fancyColourChoice.b.green;
+  document.getElementById("b-blue").value = fancyColourChoice.b.blue;
+  document.getElementById("c-red").value = fancyColourChoice.c.red;
+  document.getElementById("c-green").value = fancyColourChoice.c.green;
+  document.getElementById("c-blue").value = fancyColourChoice.c.blue;
+  document.getElementById("d-red").value = fancyColourChoice.d.red;
+  document.getElementById("d-green").value = fancyColourChoice.d.green;
+  document.getElementById("d-blue").value = fancyColourChoice.d.blue;
+  
+}
+
+function fillInCosineColourSpectrum() {
+  var a = new CosineInput(
+    Number(document.getElementById("a-red").value),
+    Number(document.getElementById("a-green").value),
+    Number(document.getElementById("a-blue").value)
+  );
+  var b = new CosineInput(
+    Number(document.getElementById("b-red").value),
+    Number(document.getElementById("b-green").value),
+    Number(document.getElementById("b-blue").value)
+  );
+  var c = new CosineInput(
+    Number(document.getElementById("c-red").value),
+    Number(document.getElementById("c-green").value),
+    Number(document.getElementById("c-blue").value)
+  );
+  var d = new CosineInput(
+    Number(document.getElementById("d-red").value),
+    Number(document.getElementById("d-green").value),
+    Number(document.getElementById("d-blue").value)
+  );
+
+  fancyColourChoice = new FancyColour(a,b,c,d);
   var specfunc = t =>cosineColours(fancyColourChoice,t);
   renderSpectrum('fancyColourSpectrum', specfunc);
 }

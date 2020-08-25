@@ -94,6 +94,7 @@
     <p></p>
     <input type="radio" id="cosineRange" name="colourPicker" value="cosine">
     <label for="colourchoice2">Cosine</label>
+    <p>function is a + b*cos(2*pi*(c*t +d))</p>
     <label for="fancyColour">Choose a preset:</label>
     <select id="fancyColour" name="fancyColour">
       <option value="fc1">rainbow</option>
@@ -105,6 +106,30 @@
       <option value="fc7">pastel</option>
     </select>
     <canvas id="fancyColourSpectrum"></canvas>
+    <table>
+      <tr><td></td><td>a</td><td>b</td><td>c</td><td>d</td></tr>
+      <tr>
+        <td>Red</td>
+        <td><input type="number" min="0" max="1" step="0.05" id="a-red"></input></td>
+        <td><input type="number" min="0" max="1" step="0.05" id="b-red"></input></td>
+        <td><input type="number" min="0" max="1" step="0.05" id="c-red"></input></td>
+        <td><input type="number" min="0" max="1" step="0.05" id="d-red"></input></td>
+      </tr>
+      <tr>
+        <td>Green</td>
+        <td><input type="number" min="0" max="1" step="0.05" id="a-green"></input></td>
+        <td><input type="number" min="0" max="1" step="0.05" id="b-green"></input></td>
+        <td><input type="number" min="0" max="1" step="0.05"  id="c-green"></input></td>
+        <td><input type="number" min="0" max="1" step="0.05"  id="d-green"></input></td>
+      </tr>
+      <tr>
+        <td>Blue</td>
+        <td><input type="number" min="0" max="1" step="0.05"  id="a-blue"></input></td>
+        <td><input type="number" min="0" max="1" step="0.05"  id="b-blue"></input></td>
+        <td><input type="number" min="0" max="1" step="0.05"  id="c-blue"></input></td>
+        <td><input type="number" min="0" max="1" step="0.05"  id="d-blue"></input></td>
+      </tr>
+    </table>
 
   
   </form>
