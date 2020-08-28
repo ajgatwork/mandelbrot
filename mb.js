@@ -136,7 +136,7 @@ class FancyColour {
 }
 
 var fancyColour1 = new FancyColour(new CosineInput(0.5,0.5,0.5), new CosineInput(0.5,0.5,0.5), new CosineInput(1,1,1), new CosineInput(0,0.33,0.67));
-var fancyColour2 = new FancyColour(new CosineInput(0.5,0.5,0.5), new CosineInput(0.5,0.5,0.5), new CosineInput(1,1,1), new CosineInput(0,0.1,0.2));
+var fancyColour2 = new FancyColour(new CosineInput(0.5,0.5,0.5), new CosineInput(0.5,0.5,0.5), new CosineInput(0.9,0.9,0.9), new CosineInput(0.4,0.55,0.7));
 var fancyColour3 = new FancyColour(new CosineInput(0.5,0.5,0.5), new CosineInput(0.5,0.5,0.5), new CosineInput(1,1,1), new CosineInput(0.3,0.2,0.2));
 var fancyColour4 = new FancyColour(new CosineInput(0.5,0.5,0.5), new CosineInput(0.5,0.5,0.5), new CosineInput(1,1,1), new CosineInput(0.8,0.9,0.3));
 var fancyColour5 = new FancyColour(new CosineInput(0.5,0.5,0.5), new CosineInput(0.5,0.5,0.5), new CosineInput(1,0.7,0.4), new CosineInput(0,0.15,0.2));
@@ -613,6 +613,13 @@ function closeDragElement() {
   //document.getElementById( "dragger").onmouseup = null;
   //document.getElementById( "dragger").onmousemove = null;
 }
+
+document.getElementById('save').onclick = e => {
+    let link = document.getElementById('save');
+    let canvas = document.getElementById('myCanvas');
+    link.href = canvas.toDataURL();
+    link.download = "mypicture.png";
+};
 
 window.onload = firstLoadBurningShip;
 
