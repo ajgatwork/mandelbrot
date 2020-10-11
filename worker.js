@@ -6,31 +6,60 @@ const log2 = Math.log(2);
 /*
  * This is the mandelbrot calculation
  */
-function mbCalc(p, maxIteration, escapeValue) {
+/* function mbCalc(p, maxIteration, escapeValue) {
 
-    let x2 = 0;
-    let y2 = 0;
-    let w = 0;
-    let i = 0;
-    let x = 0;
-    let y = 0;
-    while (x2 + y2 <= escapeValue && i < maxIteration) {
-        x = x2 - y2 + p.x;
-        y = w - x2 - y2 - p.y;
-        x2 = x * x;
-        y2 = y * y;
-        w = (x + y) * (x + y);
-        i++;
-    }
+  let x = 0;
+  let y = 0;
+  let i = 0;
+
+  while (x*x + y*y <= escapeValue && i < maxIteration) {
+      let xtemp = x;
+      x = x*x - y*y + p.x;
+      y = 2*xtemp*y + p.y;
+      i++;
+  }
     p.iteration = i;
     //calculate the smoothed iteration
     // see https://en.wikipedia.org/wiki/Plotting_algorithms_for_the_Mandelbrot_set
     if (i < maxIteration) {
-        p.smoothedIteration = i + 1 - Math.log((Math.log(x2 + y2) / 2) / log2) / log2;
+        p.smoothedIteration = i + 1 - Math.log((Math.log(x*x + y*y) / 2) / log2) / log2;
     } else {
         p.smoothedIteration = maxIteration;
     }
     return p;
+} */
+
+function mbCalc(p, maxIteration, escapeValue) {
+  // c = −0.8 + 0.156i
+  //c=-0.74543+0.11301*i
+  let c = {x:-0.74543, y:0.11301};
+  return juliaCalc(p,c, maxIteration, escapeValue);
+}
+
+/*
+ * This is the julia set calculation
+ */
+function juliaCalc(p, c, maxIteration, escapeValue) {
+
+  let x = p.x;
+  let y = p.y;
+  let i = 0;
+
+  while (x*x + y*y <= escapeValue && i < maxIteration) {
+      let xtemp = x;
+      x = x*x - y*y + c.x;
+      y = 2*xtemp*y + c.y;
+      i++;
+  }
+  p.iteration = i;
+  //calculate the smoothed iteration
+  // see https://en.wikipedia.org/wiki/Plotting_algorithms_for_the_Mandelbrot_set
+  if (i < maxIteration) {
+      p.smoothedIteration = i + 1 - Math.log((Math.log(x*x + y*y) / 2) / log2) / log2;
+  } else {
+      p.smoothedIteration = maxIteration;
+  }
+  return p;
 }
 
 function burningshipCalc(p, maxIteration, escapeValue) {
