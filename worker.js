@@ -6,7 +6,7 @@ const log2 = Math.log(2);
 /*
  * This is the mandelbrot calculation
  */
-/* function mbCalc(p, maxIteration, escapeValue) {
+ function mbCalc(p, maxIteration, escapeValue) {
 
   let x = 0;
   let y = 0;
@@ -27,14 +27,14 @@ const log2 = Math.log(2);
         p.smoothedIteration = maxIteration;
     }
     return p;
-} */
-
+} 
+/*
 function mbCalc(p, maxIteration, escapeValue) {
   // c = −0.8 + 0.156i
   //c=-0.74543+0.11301*i
   let c = {x:-0.74543, y:0.11301};
   return juliaCalc(p,c, maxIteration, escapeValue);
-}
+}*/
 
 /*
  * This is the julia set calculation
