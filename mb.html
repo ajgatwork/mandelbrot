@@ -43,13 +43,109 @@
     border-color:black;
   }
   
+  /* modern metallic floating panel (adjusted width + responsiveness) */
   #floating {
     position: absolute;
+    left: 10px;
+    top: 10px;
     z-index: 9;
-    background-color: rgba(104, 81, 81, 0.5);
-    text-align: left;
-    color: white;
-    border: 1px solid #d3d3d3;
+    width: 480px;               /* increased from 320px */
+    max-width: 90vw;           /* responsive */
+    max-height: 80vh;          /* allow internal scrolling */
+    overflow: auto;
+    color: #1a1a1a;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 11px;
+    border-radius: 8px;
+    padding: 10px;
+    box-sizing: border-box;
+    background: linear-gradient(180deg, #e9ecef 0%, #c7c9cc 40%, #a9abac 100%);
+    border: 1px solid rgba(0,0,0,0.25);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.6),
+      0 6px 18px rgba(0,0,0,0.45);
+  }
+
+  #floating #dragger { cursor: move; margin-bottom: 6px; }
+  #floating #dragger p { margin:0; font-weight:600; color:#2b2b2b; }
+
+  /* layout */
+  #floating fieldset {
+    border: none;
+    margin: 6px 0;
+    padding: 6px 0;
+  }
+  #floating legend {
+    font-weight: 700;
+    font-size: 12px;
+    margin-bottom: 6px;
+    color: #111;
+  }
+  .row { display:flex; align-items:center; gap:8px; margin:6px 0; }
+  .row label { width:140px; color:#222; }        /* increased label column */
+  .row input[type="text"],
+  .row input[type="number"],
+  #floating select,
+  #floating input[type="color"] {
+    flex:1;
+    min-width:0;             /* allow inputs to shrink properly */
+    padding:6px;
+    border-radius:4px;
+    border:1px solid rgba(0,0,0,0.15);
+    background: linear-gradient(180deg,#fbfbfb,#efefef);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+  }
+  #floating input[type="number"] { width:100%; box-sizing:border-box; }
+
+  #floating input[type="radio"],
+  #floating input[type="checkbox"] { transform:scale(1.05); }
+
+  /* buttons */
+  #floating .btn {
+    display:inline-block;
+    padding:6px 10px;
+    border-radius:4px;
+    border:1px solid rgba(0,0,0,0.2);
+    background: linear-gradient(180deg,#f7f7f7,#dedede);
+    cursor:pointer;
+    font-weight:600;
+    box-shadow: 0 2px 0 rgba(255,255,255,0.4) inset;
+  }
+  #floating .btn:active { transform:translateY(1px); }
+
+  /* colour area */
+  #floating .colour-row { display:flex; gap:8px; align-items:center; }
+  #floating canvas { border:1px solid rgba(0,0,0,0.1); background:#fff; width:120px; height:24px; } /* larger canvas */
+
+  /* save link */
+  #floating #save {
+    display:inline-block;
+    margin-top:8px;
+    color:#1b1b1b;
+    text-decoration:none;
+  }
+
+  /* small muted note */
+  #floating .note { font-size:10px; color:#333; opacity:0.9; margin-top:4px; }
+
+  /* cosine params grid: a bit wider first column to match labels */
+  #floating fieldset > div[style*="grid-template-columns"] {
+    /* existing inline grid kept, but inputs will respect min-width:0 */
+  }
+
+  /* keep debug panel unchanged elsewhere */
+  /* new debug panel style */
+  #debug {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    z-index: 10;
+    background-color: rgba(0,0,0,0.6);
+    color: #fff;
+    padding: 8px;
+    border: 1px solid #444;
+    font-size: 9pt;
+    max-width: 220px;
   }
 </style>
 <body>
@@ -61,88 +157,111 @@
   - move to typescript?
 -->
 
-<div id="floating">
-  <div id="dragger"><p>drag me!</p></div>
-  <form id="userinput">
-    <p>iterations <input type="text" id="iterations" /> 
-      <input type="checkbox" id="autoiterations" name="autoiterate" checked>
-      <label for="autoiterations">Automatically set iterations</label><br>
-      escape value <input type="text" id="escape" /></p>
-    <!--<p>dpr <script>window.alert(window.devicePixelRatio)</script></p>-->
-    <input type="radio" id="fractalmb" name="fractal" value="mb">
-    <label for="fractalchoice1">Mandelbrot</label>
-    <input type="radio" id="fractalbs" name="fractal" value="bs">
-    <label for="fractalchoice2">Burning Ship</label>
-    <p></p>
-    <input type="button" id="go" value="GO!" />
-    <input type="button" id="reset" value="Reset" />
-    <p>position</p>
-    <p id="span"></p>
-    <p id="positionxl"></p>
-    <p id="positionxh"></p>
-    <p id="positionyl"></p>
-    <p id="positionyh"></p>
-    <p id="position"></p>
-    <p id="zoom"></p>
-    <p id="breakdown"></p>
-    <p id="rate"></p> 
-    <h3>Colour choices</h3>
-    <input type="radio" id="colourRange" name="colourPicker" value="range">
-    <label for="colourchoice1">End colour</label>
-    <input type="color" id="colourend"> 
-    <canvas id="colourSpectrum"></canvas>
-    <p></p>
-    <input type="radio" id="cosineRange" name="colourPicker" value="cosine">
-    <label for="colourchoice2">Cosine</label>
-    <p>function is a + b*cos(2*pi*(c*t +d))</p>
-    <label for="fancyColour">Choose a preset:</label>
-    <select id="fancyColour" name="fancyColour">
-      <option value="fc1">rainbow</option>
-      <option value="fc2" selected>ice</option>
-      <option value="fc3">dark</option>
-      <option value="fc4">sun</option>
-      <option value="fc5">purple</option>
-      <option value="fc6">pink</option>
-      <option value="fc7">pastel</option>
-    </select>
-    <canvas id="fancyColourSpectrum"></canvas>
-    <table>
-      <tr><td></td><td>a</td><td>b</td><td>c</td><td>d</td></tr>
-      <tr>
-        <td>Red</td>
-        <td><input type="number" min="0" max="1" step="0.05" id="a-red"></input></td>
-        <td><input type="number" min="0" max="1" step="0.05" id="b-red"></input></td>
-        <td><input type="number" min="0" max="1" step="0.05" id="c-red"></input></td>
-        <td><input type="number" min="0" max="1" step="0.05" id="d-red"></input></td>
-      </tr>
-      <tr>
-        <td>Green</td>
-        <td><input type="number" min="0" max="1" step="0.05" id="a-green"></input></td>
-        <td><input type="number" min="0" max="1" step="0.05" id="b-green"></input></td>
-        <td><input type="number" min="0" max="1" step="0.05"  id="c-green"></input></td>
-        <td><input type="number" min="0" max="1" step="0.05"  id="d-green"></input></td>
-      </tr>
-      <tr>
-        <td>Blue</td>
-        <td><input type="number" min="0" max="1" step="0.05"  id="a-blue"></input></td>
-        <td><input type="number" min="0" max="1" step="0.05"  id="b-blue"></input></td>
-        <td><input type="number" min="0" max="1" step="0.05"  id="c-blue"></input></td>
-        <td><input type="number" min="0" max="1" step="0.05"  id="d-blue"></input></td>
-      </tr>
-    </table>
+<div id="floating" role="region" aria-label="Controls">
+  <div id="dragger"><p>Controls — drag me</p></div>
 
-  
+  <form id="userinput" autocomplete="off">
+    <fieldset>
+      <legend>Iterations & Escape</legend>
+      <div class="row">
+        <label for="iterations">Iterations</label>
+        <input type="text" id="iterations" />
+      </div>
+      <div class="row">
+        <label for="autoiterations">Auto iterations</label>
+        <input type="checkbox" id="autoiterations" name="autoiterate" checked />
+      </div>
+      <div class="row">
+        <label for="escape">Escape</label>
+        <input type="text" id="escape" />
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Fractal</legend>
+      <div class="row">
+        <label>Mandelbrot</label>
+        <input type="radio" id="fractalmb" name="fractal" value="mb">
+      </div>
+      <div class="row">
+        <label>Burning Ship</label>
+        <input type="radio" id="fractalbs" name="fractal" value="bs">
+      </div>
+      <div class="row" style="justify-content:flex-start; gap:6px; margin-top:8px;">
+        <button type="button" id="go" class="btn">GO!</button>
+        <button type="button" id="reset" class="btn">Reset</button>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Colour</legend>
+      <div class="row">
+        <label>End colour</label>
+        <input type="radio" id="colourRange" name="colourPicker" value="range">
+        <input type="color" id="colourend" style="width:48px; padding:2px; margin-left:6px;">
+        <canvas id="colourSpectrum" width="100" height="24"></canvas>
+      </div>
+
+      <div class="row" style="margin-top:6px;">
+        <label>Cosine</label>
+        <input type="radio" id="cosineRange" name="colourPicker" value="cosine">
+        <select id="fancyColour" style="flex:1;">
+          <option value="fc1">rainbow</option>
+          <option value="fc2" selected>ice</option>
+          <option value="fc3">dark</option>
+          <option value="fc4">sun</option>
+          <option value="fc5">purple</option>
+          <option value="fc6">pink</option>
+          <option value="fc7">pastel</option>
+        </select>
+        <canvas id="fancyColourSpectrum" width="100" height="24"></canvas>
+      </div>
+
+      <div class="note">Cosine: a + b*cos(2π*(c*t + d))</div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Cosine params</legend>
+      <!-- keep same IDs for a-*, b-*, c-*, d-* so JS continues to work -->
+      <div style="display:grid; grid-template-columns:80px 1fr 1fr 1fr 1fr; gap:6px; align-items:center;">
+        <div></div><div style="font-weight:700">a</div><div style="font-weight:700">b</div><div style="font-weight:700">c</div><div style="font-weight:700">d</div>
+
+        <div>Red</div>
+        <input type="number" min="0" max="1" step="0.05" id="a-red">
+        <input type="number" min="0" max="1" step="0.05" id="b-red">
+        <input type="number" min="0" max="1" step="0.05" id="c-red">
+        <input type="number" min="0" max="1" step="0.05" id="d-red">
+
+        <div>Green</div>
+        <input type="number" min="0" max="1" step="0.05" id="a-green">
+        <input type="number" min="0" max="1" step="0.05" id="b-green">
+        <input type="number" min="0" max="1" step="0.05" id="c-green">
+        <input type="number" min="0" max="1" step="0.05" id="d-green">
+
+        <div>Blue</div>
+        <input type="number" min="0" max="1" step="0.05" id="a-blue">
+        <input type="number" min="0" max="1" step="0.05" id="b-blue">
+        <input type="number" min="0" max="1" step="0.05" id="c-blue">
+        <input type="number" min="0" max="1" step="0.05" id="d-blue">
+      </div>
+    </fieldset>
+
+    <a id="save">Save Image</a>
   </form>
-  <a id="save">Save Image</a>
 </div>
-<!--
-  <div id="html5DIV">
-    <h3>Closest to black</h3>
-    <input type="color" id="highColour" value="#ffffff" style="width:85%;">
-    <h3>furthest away</h3>
-    <input type="color" id="lowColour" value="#0000ff" style="width:85%;">
-  </div>
--->
+
+<div id="debug" aria-hidden="false">
+  <p>position</p>
+  <p id="span"></p>
+  <p id="positionxl"></p>
+  <p id="positionxh"></p>
+  <p id="positionyl"></p>
+  <p id="positionyh"></p>
+  <p id="position"></p>
+  <p id="zoom"></p>
+  <p id="breakdown"></p>
+  <p id="rate"></p>
+</div>
 
   <div id="wrapper">
     <canvas id="myCanvas"></canvas>
